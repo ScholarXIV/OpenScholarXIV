@@ -21,15 +21,15 @@ OpenScholarXIV is a free and open-source app for finding, reading, bookmarking, 
 
 ## Screens
 
-| Feature | Preview |
-| --- | --- |
-| Find Papers | <img src="assets/banners/OpenScholarXIV.png" width="320" alt="Find papers"> |
-| Read and Listen to Summaries | <img src="assets/banners/OpenScholarXIV2.png" width="320" alt="Read and listen to summaries"> |
-| Deep Dive with AI | <img src="assets/banners/OpenScholarXIV3.png" width="320" alt="Deep dive with AI"> |
-| Bring Your Own Keys | <img src="assets/banners/OpenScholarXIV4.png" width="320" alt="Bring your own keys"> |
-| Choose Themes | <img src="assets/banners/OpenScholarXIV5.png" width="320" alt="Choose themes"> |
-| Read Papers In-app | <img src="assets/banners/OpenScholarXIV6.png" width="320" alt="Read papers in-app"> |
-| Bookmark Papers | <img src="assets/banners/OpenScholarXIV8.png" width="320" alt="Bookmark papers"> |
+<div align="center">
+  <img src="assets/banners/OpenScholarXIV.png" width="400" alt="Find papers">
+  <img src="assets/banners/OpenScholarXIV2.png" width="400" alt="Read and listen to summaries">
+  <img src="assets/banners/OpenScholarXIV3.png" width="400" alt="Deep dive with AI">
+  <img src="assets/banners/OpenScholarXIV4.png" width="400" alt="Bring your own keys">
+  <img src="assets/banners/OpenScholarXIV5.png" width="400" alt="Choose themes">
+  <img src="assets/banners/OpenScholarXIV6.png" width="400" alt="Read papers in-app">
+  <img src="assets/banners/OpenScholarXIV8.png" width="400" alt="Bookmark papers">
+</div>
 
 ## Contributing
 
