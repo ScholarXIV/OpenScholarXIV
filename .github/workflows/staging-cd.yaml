@@ -59,6 +59,13 @@ jobs:
           STAGING_TELEGRAM_CHAT_ID: ${{ secrets.STAGING_TELEGRAM_CHAT_ID }}
         run: chmod +x ./scripts/build-and-filter-errors.sh && ./scripts/build-and-filter-errors.sh
 
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-apks
+          path: ${{ github.workspace }}/build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
+
       - name: Send error
         if: always()
         uses: appleboy/telegram-action@master
@@ -75,17 +82,50 @@ jobs:
           echo "SHORT_HEAD_SHA=`echo ${{ github.event.pull_request.head.sha }} | cut -c1-8`" >> $GITHUB_ENV
 
       - name: Send build to Telegram group
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.STAGING_TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
-          format: HTML
-          message: |
-            version: ${{ env.BUILD_VERSION }}
-            client_id: OpenScholarXIV
-            build_type: Staging
-            commit: <a href="https://github.com/${{ github.repository }}/commit/${{ github.sha }}">${{ env.SHORT_SHA }}</a>
-            diff: <a href="https://github.com/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}">${{ env.SHORT_BASE_SHA }}...${{ env.SHORT_HEAD_SHA }}</a>
-            pull_request: <a href="https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}">#${{ github.event.pull_request.number }}</a>
-            repo: <a href="https://github.com/${{ github.repository }}">${{ github.repository }}</a>
-          document: ${{ github.workspace }}/build/app/outputs/flutter-apk/app-release.apk
+        env:
+          STAGING_TELEGRAM_BOT_TOKEN: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
+          STAGING_TELEGRAM_CHAT_ID: ${{ secrets.STAGING_TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+
+          apk_dir="${GITHUB_WORKSPACE}/build/app/outputs/flutter-apk"
+          max_bytes=$((50 * 1024 * 1024))
+          run_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+          send_message() {
+            curl --fail-with-body -sS -X POST "https://api.telegram.org/bot${STAGING_TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${STAGING_TELEGRAM_CHAT_ID}" \
+              --data-urlencode "parse_mode=HTML" \
+              --data-urlencode "text=$1"
+          }
+
+          send_message "version: ${BUILD_VERSION:-}
+          client_id: OpenScholarXIV
+          build_type: Staging
+          commit: <a href=\"https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}\">${SHORT_SHA}</a>
+          run: <a href=\"${run_url}\">GitHub Actions artifacts</a>
+          repo: <a href=\"https://github.com/${GITHUB_REPOSITORY}\">${GITHUB_REPOSITORY}</a>"
+
+          sent=0
+          for apk in "${apk_dir}"/*-release.apk; do
+            [ -e "$apk" ] || continue
+
+            size=$(stat -c%s "$apk")
+            name=$(basename "$apk")
+
+            if [ "$size" -gt "$max_bytes" ]; then
+              send_message "Skipped ${name}: file is larger than Telegram's 50 MB bot upload limit. Use the GitHub Actions artifact instead: ${run_url}"
+              continue
+            fi
+
+            curl --fail-with-body -sS -X POST "https://api.telegram.org/bot${STAGING_TELEGRAM_BOT_TOKEN}/sendDocument" \
+              -F "chat_id=${STAGING_TELEGRAM_CHAT_ID}" \
+              -F "document=@${apk}" \
+              -F "caption=${name} (${size} bytes)"
+
+            sent=$((sent + 1))
+          done
+
+          if [ "$sent" -eq 0 ]; then
+            send_message "No APK was sent to Telegram. Download the staging APKs from GitHub Actions artifacts: ${run_url}"
+          fi

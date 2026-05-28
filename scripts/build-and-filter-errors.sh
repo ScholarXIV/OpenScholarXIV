@@ -2,7 +2,7 @@
 
 LOG_FILE="build_output.log"
 
-flutter build apk --release --verbose 2>&1 | tee "$LOG_FILE"
+flutter build apk --release --split-per-abi --verbose 2>&1 | tee "$LOG_FILE"
 
 EXIT_CODE=${PIPESTATUS[0]}
 
