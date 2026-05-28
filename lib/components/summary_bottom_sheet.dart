@@ -128,10 +128,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.only(
-                    left: 20.0,
-                    right: 5.0,
-                  ),
+                  padding: const EdgeInsets.only(left: 20.0, right: 5.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -143,12 +140,10 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                           fontWeight: FontWeight.bold,
                           color:
                               ThemeProvider.themeOf(context).id == "mixed_theme"
-                                  ? Colors.white
-                                  : ThemeProvider.themeOf(context)
-                                      .data
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.color,
+                              ? Colors.white
+                              : ThemeProvider.themeOf(
+                                  context,
+                                ).data.textTheme.bodyLarge?.color,
                         ),
                       ),
                       Row(
@@ -168,13 +163,11 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                                         Icons.remove,
                                         color:
                                             ThemeProvider.themeOf(context).id ==
-                                                    "mixed_theme"
-                                                ? Colors.grey[200]
-                                                : ThemeProvider.themeOf(context)
-                                                    .data
-                                                    .textTheme
-                                                    .bodyLarge
-                                                    ?.color,
+                                                "mixed_theme"
+                                            ? Colors.grey[200]
+                                            : ThemeProvider.themeOf(
+                                                context,
+                                              ).data.textTheme.bodyLarge?.color,
                                       ),
                                     ),
                                     GestureDetector(
@@ -184,15 +177,17 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                                       child: Text(
                                         speedRate.toStringAsFixed(1).toString(),
                                         style: TextStyle(
-                                          color: ThemeProvider.themeOf(context)
-                                                      .id ==
+                                          color:
+                                              ThemeProvider.themeOf(
+                                                    context,
+                                                  ).id ==
                                                   "mixed_theme"
                                               ? Colors.grey[200]
                                               : ThemeProvider.themeOf(context)
-                                                  .data
-                                                  .textTheme
-                                                  .bodyLarge
-                                                  ?.color,
+                                                    .data
+                                                    .textTheme
+                                                    .bodyLarge
+                                                    ?.color,
                                         ),
                                       ),
                                     ),
@@ -202,10 +197,8 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                                           changeSpeedRate(increase: true);
                                         }
                                       },
-                                      icon: const Icon(
-                                        Icons.add,
-                                      ),
-                                    )
+                                      icon: const Icon(Icons.add),
+                                    ),
                                   ],
                                 )
                               : Container(),
@@ -225,13 +218,13 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                             child: IconButton(
                               onPressed: () {
                                 widget.parseAndLaunchURL(
-                                  widget.paperData.id,
+                                  widget.paperData.pdfUrl.isNotEmpty
+                                      ? widget.paperData.pdfUrl
+                                      : widget.paperData.id,
                                   widget.paperData.title,
                                 );
                               },
-                              icon: const Icon(
-                                Ionicons.open_outline,
-                              ),
+                              icon: const Icon(Ionicons.open_outline),
                             ),
                           ),
                           IconButton(
@@ -246,9 +239,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                                 ),
                               );
                             },
-                            icon: const Icon(
-                              Ionicons.expand_outline,
-                            ),
+                            icon: const Icon(Ionicons.expand_outline),
                           ),
                         ],
                       ),
@@ -262,35 +253,33 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                 child: ListView(
                   children: [
                     Padding(
-                        padding: const EdgeInsets.only(
-                          left: 20.0,
-                          right: 20.0,
-                          top: 10.0,
-                          bottom: 100.0,
-                        ),
-                        child: (Paper.containsLatex(summary)
-                            ? TeXView(
-                                child: TeXViewDocument(
-                                  summary,
-                                  style: TeXViewStyle(
-                                    contentColor: ThemeProvider.themeOf(context)
-                                        .data
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.color,
-                                    textAlign: TeXViewTextAlign.left,
-                                    fontStyle: TeXViewFontStyle(
-                                        fontSize: 15,
-                                        fontWeight: TeXViewFontWeight.normal),
+                      padding: const EdgeInsets.only(
+                        left: 20.0,
+                        right: 20.0,
+                        top: 10.0,
+                        bottom: 100.0,
+                      ),
+                      child: (Paper.containsLatex(summary)
+                          ? TeXView(
+                              child: TeXViewDocument(
+                                summary,
+                                style: TeXViewStyle(
+                                  contentColor: ThemeProvider.themeOf(
+                                    context,
+                                  ).data.textTheme.bodyLarge?.color,
+                                  textAlign: TeXViewTextAlign.left,
+                                  fontStyle: TeXViewFontStyle(
+                                    fontSize: 15,
+                                    fontWeight: TeXViewFontWeight.normal,
                                   ),
                                 ),
-                              )
-                            : SelectableText(
-                                summary,
-                                style: const TextStyle(
-                                  fontSize: 15.0,
-                                ),
-                              ))),
+                              ),
+                            )
+                          : SelectableText(
+                              summary,
+                              style: const TextStyle(fontSize: 15.0),
+                            )),
+                    ),
                   ],
                 ),
               ),

@@ -59,11 +59,33 @@ jobs:
           STAGING_TELEGRAM_CHAT_ID: ${{ secrets.STAGING_TELEGRAM_CHAT_ID }}
         run: chmod +x ./scripts/build-and-filter-errors.sh && ./scripts/build-and-filter-errors.sh
 
+      - name: Prepare renamed APKs
+        run: |
+          set -euo pipefail
+
+          apk_dir="${GITHUB_WORKSPACE}/build/app/outputs/flutter-apk"
+          upload_dir="${GITHUB_WORKSPACE}/build/app/outputs/renamed-apks"
+          mkdir -p "$upload_dir"
+
+          copy_apk() {
+            source_name="$1"
+            target_name="$2"
+
+            if [ -f "${apk_dir}/${source_name}" ]; then
+              cp "${apk_dir}/${source_name}" "${upload_dir}/${target_name}"
+            fi
+          }
+
+          copy_apk "app-armeabi-v7a-release.apk" "OpenScholarXIV-v7a.apk"
+          copy_apk "app-arm64-v8a-release.apk" "OpenScholarXIV-v8a.apk"
+          copy_apk "app-x86_64-release.apk" "OpenScholarXIV-x86_64.apk"
+          copy_apk "app-release.apk" "OpenScholarXIV.apk"
+
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: staging-apks
-          path: ${{ github.workspace }}/build/app/outputs/flutter-apk/*-release.apk
+          path: ${{ github.workspace }}/build/app/outputs/renamed-apks/*.apk
           if-no-files-found: error
 
       - name: Send error
@@ -88,7 +110,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          apk_dir="${GITHUB_WORKSPACE}/build/app/outputs/flutter-apk"
+          apk_dir="${GITHUB_WORKSPACE}/build/app/outputs/renamed-apks"
           max_bytes=$((50 * 1024 * 1024))
           run_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
@@ -107,21 +129,37 @@ jobs:
           repo: <a href=\"https://github.com/${GITHUB_REPOSITORY}\">${GITHUB_REPOSITORY}</a>"
 
           sent=0
-          for apk in "${apk_dir}"/*-release.apk; do
+          for apk in "${apk_dir}"/*.apk; do
             [ -e "$apk" ] || continue
 
             size=$(stat -c%s "$apk")
             name=$(basename "$apk")
+            caption_name="$name"
+
+            case "$name" in
+              OpenScholarXIV-v7a.apk)
+                caption_name="app-armeabi-v7a-release.apk"
+                ;;
+              OpenScholarXIV-v8a.apk)
+                caption_name="app-arm64-v8a-release.apk"
+                ;;
+              OpenScholarXIV-x86_64.apk)
+                caption_name="app-x86_64-release.apk"
+                ;;
+              OpenScholarXIV.apk)
+                caption_name="app-release.apk"
+                ;;
+            esac
 
             if [ "$size" -gt "$max_bytes" ]; then
-              send_message "Skipped ${name}: file is larger than Telegram's 50 MB bot upload limit. Use the GitHub Actions artifact instead: ${run_url}"
+              send_message "Skipped ${caption_name}: file is larger than Telegram's 50 MB bot upload limit. Use the GitHub Actions artifact instead: ${run_url}"
               continue
             fi
 
             curl --fail-with-body -sS -X POST "https://api.telegram.org/bot${STAGING_TELEGRAM_BOT_TOKEN}/sendDocument" \
               -F "chat_id=${STAGING_TELEGRAM_CHAT_ID}" \
               -F "document=@${apk}" \
-              -F "caption=${name} (${size} bytes)"
+              -F "caption=${caption_name} (${size} bytes)"
 
             sent=$((sent + 1))
           done

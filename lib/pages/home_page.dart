@@ -37,6 +37,7 @@ class _HomePageState extends State<HomePage> {
 
   var dio = Dio();
   List<Paper> data = [];
+  ArxivSearchResult? lastSearchResult;
 
   Future<void> search({bool? resetPagination}) async {
     if (resetPagination == true) {
@@ -48,13 +49,17 @@ class _HomePageState extends State<HomePage> {
 
     var searchTerm = searchTermController.text.toString().trim();
     if (searchTerm.isNotEmpty) {
-      data = await Arxiv.search(
+      final result = await Arxiv.searchWithMetadata(
         searchTerm,
         page: startPagination,
         pageSize: maxContent,
       );
+      lastSearchResult = result;
+      data = result.papers;
     } else {
-      data = await suggestedPapers();
+      final result = await suggestedPapers();
+      lastSearchResult = result;
+      data = result.papers;
     }
 
     isHomeScreenLoading = false;
@@ -84,11 +89,16 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<List<Paper>> suggestedPapers() async {
+  Future<ArxivSearchResult> suggestedPapers() async {
     var maxRetries = 10;
-    List<Paper> suggested = [];
-    while (suggested.isEmpty && maxRetries > 0) {
-      suggested = await Arxiv.suggest(pageSize: maxContent);
+    var suggested = const ArxivSearchResult(
+      papers: [],
+      feed: {},
+      rawResponse: {},
+      rawXml: "",
+    );
+    while (suggested.papers.isEmpty && maxRetries > 0) {
+      suggested = await Arxiv.suggestWithMetadata(pageSize: maxContent);
       maxRetries--;
     }
     return suggested;
@@ -102,14 +112,13 @@ class _HomePageState extends State<HomePage> {
   Future<void> parseAndLaunchURL(String currentURL, String title) async {
     paperTitle = title;
 
-    var splitURL = currentURL.split("/");
+    pdfURL = pdfUrlFor(currentURL);
+    var splitURL = pdfURL.split("/");
     var id = splitURL[splitURL.length - 1];
     var urlType = 0;
     if (id.contains(".") == true) {
-      pdfURL = "$pdfBaseURL/$id";
       urlType = 1;
     } else {
-      pdfURL = "$pdfBaseURL/cond-mat/$id";
       urlType = 2;
     }
 
@@ -138,15 +147,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   void downloadPaper(String paperURL) async {
+    await launchUrl(Uri.parse(pdfUrlFor(paperURL)));
+  }
+
+  String pdfUrlFor(String paperURL) {
+    var selectedURL = paperURL.trim();
+    if (selectedURL.startsWith("http") && selectedURL.contains("/pdf/")) {
+      return selectedURL;
+    }
+
     var splitURL = paperURL.split("/");
     var id = splitURL[splitURL.length - 1];
-    var selectedURL = "";
     if (id.contains(".") == true) {
       selectedURL = "$pdfBaseURL/$id";
     } else {
       selectedURL = "$pdfBaseURL/cond-mat/$id";
     }
-    await launchUrl(Uri.parse(selectedURL));
+    return selectedURL;
   }
 
   @override
@@ -165,25 +182,20 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor:
-            ThemeProvider.themeOf(context).data.appBarTheme.backgroundColor,
-        title: const Text(
-          "OpenScholarXIV",
-        ),
+        backgroundColor: ThemeProvider.themeOf(
+          context,
+        ).data.appBarTheme.backgroundColor,
+        title: const Text("OpenScholarXIV"),
         actions: [
           // HELP
           IconButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const HowToUsePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const HowToUsePage()),
               );
             },
-            icon: const Icon(
-              Icons.help_outline,
-            ),
+            icon: const Icon(Icons.help_outline),
           ),
 
           // BOOKMARKS
@@ -199,9 +211,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
-            icon: const Icon(
-              Icons.bookmark_border_outlined,
-            ),
+            icon: const Icon(Icons.bookmark_border_outlined),
           ),
 
           // CHANGE THEME
@@ -213,8 +223,8 @@ class _HomePageState extends State<HomePage> {
               ThemeProvider.themeOf(context).id == "light_theme"
                   ? Icons.dark_mode_outlined
                   : ThemeProvider.themeOf(context).id == "dark_theme"
-                      ? Icons.sunny_snowing
-                      : Ionicons.sunny,
+                  ? Icons.sunny_snowing
+                  : Ionicons.sunny,
             ),
           ),
 
@@ -224,15 +234,11 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const AIChatPage(
-                    paperData: null,
-                  ),
+                  builder: (context) => const AIChatPage(paperData: null),
                 ),
               );
             },
-            icon: const Icon(
-              Icons.auto_awesome_outlined,
-            ),
+            icon: const Icon(Icons.auto_awesome_outlined),
           ),
 
           const SizedBox(width: 10.0),
@@ -246,41 +252,32 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           children: [
             SearchBox(
-                searchTermController: searchTermController,
-                searchFunction: search,
-                toggleSortOrder: toggleSortOrder,
-                sortOrderNewest: sortOrderNewest),
+              searchTermController: searchTermController,
+              searchFunction: search,
+              toggleSortOrder: toggleSortOrder,
+              sortOrderNewest: sortOrderNewest,
+            ),
 
             // Data or Loading
             isHomeScreenLoading == true
-                ? const LoadingIndicator(
-                    topPadding: 200.0,
-                  )
+                ? const LoadingIndicator(topPadding: 200.0)
                 : data.isNotEmpty
-                    ? Column(
-                        children: data.map(
-                          (eachPaper) {
-                            return EachPaperCard(
-                              eachPaper: eachPaper,
-                              downloadPaper: downloadPaper,
-                              parseAndLaunchURL: parseAndLaunchURL,
-                              isBookmarked: false,
-                            );
-                          },
-                        ).toList(),
-                      )
-                    : const Padding(
-                        padding: EdgeInsets.only(top: 200.0),
-                        child: Center(
-                          child: Text(
-                            "No Results Found!",
-                          ),
-                        ),
-                      ),
+                ? Column(
+                    children: data.map((eachPaper) {
+                      return EachPaperCard(
+                        eachPaper: eachPaper,
+                        downloadPaper: downloadPaper,
+                        parseAndLaunchURL: parseAndLaunchURL,
+                        isBookmarked: false,
+                      );
+                    }).toList(),
+                  )
+                : const Padding(
+                    padding: EdgeInsets.only(top: 200.0),
+                    child: Center(child: Text("No Results Found!")),
+                  ),
 
-            const SizedBox(
-              height: 20.0,
-            ),
+            const SizedBox(height: 20.0),
 
             // Pagination
             data.isNotEmpty && searchTermController.text.trim() != ""
@@ -304,9 +301,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       Text(
                         "Showing results from $startPagination to ${startPagination + maxContent}",
-                        style: TextStyle(
-                          color: Colors.grey[600]!,
-                        ),
+                        style: TextStyle(color: Colors.grey[600]!),
                       ),
                       IconButton(
                         onPressed: () {
@@ -330,10 +325,7 @@ class _HomePageState extends State<HomePage> {
                 child: Text(
                   "Thank you to arXiv for use of its \nopen access interoperability.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[400]!,
-                    fontSize: 12.0,
-                  ),
+                  style: TextStyle(color: Colors.grey[400]!, fontSize: 12.0),
                 ),
               ),
             ),
@@ -345,10 +337,7 @@ class _HomePageState extends State<HomePage> {
                 child: const Text(
                   "View Source Code on GitHub",
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.blueAccent,
-                    fontSize: 12.0,
-                  ),
+                  style: TextStyle(color: Colors.blueAccent, fontSize: 12.0),
                 ),
               ),
             ),
@@ -386,9 +375,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(
-              height: 20.0,
-            ),
+            const SizedBox(height: 20.0),
           ],
         ),
       ),

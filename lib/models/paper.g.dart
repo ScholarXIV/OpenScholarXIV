@@ -22,13 +22,21 @@ class PaperAdapter extends TypeAdapter<Paper> {
       fields[2] as String,
       fields[3] as String,
       fields[4] as String,
+      updatedAt: fields[5] == null ? '' : fields[5] as String?,
+      abstractUrl: fields[6] == null ? '' : fields[6] as String?,
+      pdfUrl: fields[7] == null ? '' : fields[7] as String?,
+      categories: fields[8] == null ? [] : (fields[8] as List?)?.cast<String>(),
+      primaryCategory: fields[9] == null ? '' : fields[9] as String?,
+      rawEntry: fields[10] == null
+          ? {}
+          : (fields[10] as Map?)?.cast<String, dynamic>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Paper obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +46,19 @@ class PaperAdapter extends TypeAdapter<Paper> {
       ..writeByte(3)
       ..write(obj.publishedAt)
       ..writeByte(4)
-      ..write(obj.authors);
+      ..write(obj.authors)
+      ..writeByte(5)
+      ..write(obj.updatedAt)
+      ..writeByte(6)
+      ..write(obj.abstractUrl)
+      ..writeByte(7)
+      ..write(obj.pdfUrl)
+      ..writeByte(8)
+      ..write(obj.categories)
+      ..writeByte(9)
+      ..write(obj.primaryCategory)
+      ..writeByte(10)
+      ..write(obj.rawEntry);
   }
 
   @override

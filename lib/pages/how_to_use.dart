@@ -21,9 +21,30 @@ class HowToUsePage extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         children: [
           _buildSection(
-            'Search, Download and Bookmark Papers',
+            'OpenScholarXIV',
+            'assets/banners/OpenScholarXIV7.png',
+            'Completely Free & Open-Source App to browse and explore research papers with AI-powered chat and more features.',
+            isDarkTheme,
+            context,
+          ),
+          _buildSection(
+            'Search and Explore Papers',
             'assets/banners/OpenScholarXIV.png',
-            'Use the search bar at the top to find research papers. Enter keywords or author names. Once you find what you like you can bookmark it to read later or download to save the pdf.',
+            'Use the search bar at the top to find research papers or just brwose the suggested list of papers to discover new research.',
+            isDarkTheme,
+            context,
+          ),
+          _buildSection(
+            'Read Papers In-app',
+            'assets/banners/OpenScholarXIV9.png',
+            'Read any paper directly in the app for a seamless and distraction free experience.',
+            isDarkTheme,
+            context,
+          ),
+          _buildSection(
+            'Bookmark Papers',
+            'assets/banners/OpenScholarXIV8.png',
+            'Bookmark papers to read later by tapping the bookmark icon on any paper.',
             isDarkTheme,
             context,
           ),
@@ -36,21 +57,21 @@ class HowToUsePage extends StatelessWidget {
           ),
           _buildSection(
             'AI Chat',
-            'assets/banners/OpenScholarXIV7.png',
+            'assets/banners/OpenScholarXIV3.png',
             'Discuss papers with AI by tapping the AI icon or click on the AI icon on the app bar to have a general conversation.',
             isDarkTheme,
             context,
           ),
           _buildSection(
             'API configuration',
-            'assets/banners/OpenScholarXIV6.png',
+            'assets/banners/OpenScholarXIV4.png',
             "You can grab your own Gemini API key in the settings page to enable AI chat. Click on the 'GET API KEY' button to get your key.",
             isDarkTheme,
             context,
           ),
           _buildSection(
             'Change Theme',
-            'assets/banners/OpenScholarXIV3.png',
+            'assets/banners/OpenScholarXIV5.png',
             'Toggle between light, dark and mixed themes using the theme icon in the app bar.',
             isDarkTheme,
             context,
@@ -61,8 +82,13 @@ class HowToUsePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, String imagePath, String description,
-      bool isDarkTheme, BuildContext context) {
+  Widget _buildSection(
+    String title,
+    String imagePath,
+    String description,
+    bool isDarkTheme,
+    BuildContext context,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -75,8 +101,9 @@ class HowToUsePage extends StatelessWidget {
           GestureDetector(
             onTap: () => _showFullScreenImage(context, imagePath),
             child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               child: Image.asset(
                 imagePath,
                 width: double.infinity,
@@ -122,9 +149,7 @@ class HowToUsePage extends StatelessWidget {
           body: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Center(
-              child: PhotoView(
-                imageProvider: AssetImage(imagePath),
-              ),
+              child: PhotoView(imageProvider: AssetImage(imagePath)),
             ),
           ),
         ),

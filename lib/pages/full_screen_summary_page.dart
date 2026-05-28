@@ -88,10 +88,7 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
     summary = widget.paperData.summary
         .trim()
         .replaceAll(RegExp(r'\\n'), ' ')
-        .replaceAll(
-          RegExp(r'\\'),
-          '',
-        );
+        .replaceAll(RegExp(r'\\'), '');
   }
 
   @override
@@ -99,9 +96,7 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
     String summary = widget.paperData.summary;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Summary",
-        ),
+        title: const Text("Summary"),
         actions: [
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -118,14 +113,13 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                           },
                           icon: Icon(
                             Icons.remove,
-                            color: ThemeProvider.themeOf(context).id ==
+                            color:
+                                ThemeProvider.themeOf(context).id ==
                                     "mixed_theme"
                                 ? Colors.grey[200]
-                                : ThemeProvider.themeOf(context)
-                                    .data
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.color,
+                                : ThemeProvider.themeOf(
+                                    context,
+                                  ).data.textTheme.bodyLarge?.color,
                           ),
                         ),
                         GestureDetector(
@@ -135,14 +129,13 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                           child: Text(
                             speedRate.toStringAsFixed(1).toString(),
                             style: TextStyle(
-                              color: ThemeProvider.themeOf(context).id ==
+                              color:
+                                  ThemeProvider.themeOf(context).id ==
                                       "mixed_theme"
                                   ? Colors.grey[200]
-                                  : ThemeProvider.themeOf(context)
-                                      .data
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.color,
+                                  : ThemeProvider.themeOf(
+                                      context,
+                                    ).data.textTheme.bodyLarge?.color,
                             ),
                           ),
                         ),
@@ -152,10 +145,8 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                               changeSpeedRate(increase: true);
                             }
                           },
-                          icon: const Icon(
-                            Icons.add,
-                          ),
-                        )
+                          icon: const Icon(Icons.add),
+                        ),
                       ],
                     )
                   : Container(),
@@ -174,13 +165,13 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                 child: IconButton(
                   onPressed: () {
                     widget.parseAndLaunchURL(
-                      widget.paperData.id,
+                      widget.paperData.pdfUrl.isNotEmpty
+                          ? widget.paperData.pdfUrl
+                          : widget.paperData.id,
                       widget.paperData.title,
                     );
                   },
-                  icon: const Icon(
-                    Ionicons.open_outline,
-                  ),
+                  icon: const Icon(Ionicons.open_outline),
                 ),
               ),
             ],
@@ -190,32 +181,26 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
       body: ListView(
         children: [
           Padding(
-            padding: const EdgeInsets.only(
-              top: 10.0,
-              left: 20.0,
-              right: 20.0,
-            ),
+            padding: const EdgeInsets.only(top: 10.0, left: 20.0, right: 20.0),
             child: Paper.containsLatex(summary)
                 ? TeXView(
                     child: TeXViewDocument(
                       summary,
                       style: TeXViewStyle(
-                        contentColor: ThemeProvider.themeOf(context)
-                            .data
-                            .textTheme
-                            .bodyLarge
-                            ?.color,
+                        contentColor: ThemeProvider.themeOf(
+                          context,
+                        ).data.textTheme.bodyLarge?.color,
                         textAlign: TeXViewTextAlign.left,
                         fontStyle: TeXViewFontStyle(
-                            fontSize: 17, fontWeight: TeXViewFontWeight.normal),
+                          fontSize: 17,
+                          fontWeight: TeXViewFontWeight.normal,
+                        ),
                       ),
                     ),
                   )
                 : SelectableText(
                     summary,
-                    style: const TextStyle(
-                      fontSize: 17.0,
-                    ),
+                    style: const TextStyle(fontSize: 17.0),
                   ),
           ),
         ],

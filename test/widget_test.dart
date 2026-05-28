@@ -1,30 +1,58 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:arxiv/models/paper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:arxiv/main.dart';
-
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('Paper.fromJson retains arXiv entry metadata', () {
+    final paper = Paper.fromJson(
+      {
+        "id": "http://arxiv.org/abs/1234.56789v1",
+        "title": "A retained metadata example",
+        "summary": "A sample abstract.",
+        "published": "2026-01-02T03:04:05Z",
+        "updated": "2026-01-03T03:04:05Z",
+        "author": {"name": "Ada Lovelace"},
+      },
+      rawEntry: {
+        "id": {r"$": "http://arxiv.org/abs/1234.56789v1"},
+        "title": {r"$": "A retained metadata example"},
+        "updated": {r"$": "2026-01-03T03:04:05Z"},
+        "link": [
+          {
+            "@href": "https://arxiv.org/abs/1234.56789v1",
+            "@rel": "alternate",
+            "@type": "text/html",
+          },
+          {
+            "@href": "https://arxiv.org/pdf/1234.56789v1",
+            "@rel": "related",
+            "@type": "application/pdf",
+            "@title": "pdf",
+          },
+        ],
+        "summary": {r"$": "A sample abstract."},
+        "category": {
+          "@term": "cs.AI",
+          "@scheme": "http://arxiv.org/schemas/atom",
+        },
+        "published": {r"$": "2026-01-02T03:04:05Z"},
+        "arxiv:primary_category": {
+          "@term": "cs.AI",
+          "@scheme": "http://arxiv.org/schemas/atom",
+        },
+        "author": {
+          "name": {r"$": "Ada Lovelace"},
+        },
+      },
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(paper.id, "1234.56789v1");
+    expect(paper.publishedAt, "2026-01-02");
+    expect(paper.updatedAt, "2026-01-03T03:04:05Z");
+    expect(paper.abstractUrl, "https://arxiv.org/abs/1234.56789v1");
+    expect(paper.pdfUrl, "https://arxiv.org/pdf/1234.56789v1");
+    expect(paper.categories, ["cs.AI"]);
+    expect(paper.primaryCategory, "cs.AI");
+    expect(paper.rawEntry["link"], isA<List>());
+    expect(paper.retainedMetadata["rawEntry"], paper.rawEntry);
   });
 }

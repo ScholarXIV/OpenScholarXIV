@@ -1,4 +1,6 @@
 // ignore_for_file: file_names
+import 'dart:convert';
+
 import 'package:arxiv/components/id_and_date.dart';
 import 'package:arxiv/components/summary_bottom_sheet.dart';
 import 'package:arxiv/models/paper.dart';
@@ -31,7 +33,29 @@ class EachPaperCard extends StatefulWidget {
 class _EachPaperCardState extends State<EachPaperCard> {
   var pdfBaseURL = "https://arxiv.org/pdf";
 
+  String paperPdfUrl() {
+    return widget.eachPaper.pdfUrl.isNotEmpty
+        ? widget.eachPaper.pdfUrl
+        : widget.eachPaper.id;
+  }
+
+  String primaryCategory() {
+    if (widget.eachPaper.primaryCategory.isNotEmpty) {
+      return widget.eachPaper.primaryCategory;
+    }
+    if (widget.eachPaper.categories.isNotEmpty) {
+      return widget.eachPaper.categories.first;
+    }
+    return "";
+  }
+
   void shareLink(shareURL) {
+    if (shareURL.toString().startsWith("http") &&
+        shareURL.toString().contains("/pdf/")) {
+      Share.share(shareURL);
+      return;
+    }
+
     var splitURL = shareURL.split("/");
     var id = splitURL[splitURL.length - 1];
     var selectedURL = "";
@@ -49,6 +73,64 @@ class _EachPaperCardState extends State<EachPaperCard> {
       builder: (context) => SummaryBottomSheet(
         paperData: paperData,
         parseAndLaunchURL: widget.parseAndLaunchURL,
+      ),
+    );
+  }
+
+  void showMetadata() {
+    final metadata = const JsonEncoder.withIndent(
+      "  ",
+    ).convert(widget.eachPaper.retainedMetadata);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        minChildSize: 0.35,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          padding: const EdgeInsets.all(20.0),
+          decoration: BoxDecoration(
+            color: ThemeProvider.themeOf(context).data.scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20.0),
+              topRight: Radius.circular(20.0),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "arXiv Metadata",
+                style: TextStyle(
+                  color: ThemeProvider.themeOf(
+                    context,
+                  ).data.textTheme.bodyLarge?.color,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12.0),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: SelectableText(
+                    metadata,
+                    style: TextStyle(
+                      color: ThemeProvider.themeOf(
+                        context,
+                      ).data.textTheme.bodyLarge?.color,
+                      fontFamily: "monospace",
+                      fontSize: 12.0,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -84,7 +166,9 @@ class _EachPaperCardState extends State<EachPaperCard> {
     List bookmarks = await bookmarksBox.get("bookmarks") ?? [];
     await Hive.close();
 
-    isBookmarked = bookmarks.where((bookmark) => bookmark.id == widget.eachPaper.id).isNotEmpty;
+    isBookmarked = bookmarks
+        .where((bookmark) => bookmark.id == widget.eachPaper.id)
+        .isNotEmpty;
     setState(() {});
   }
 
@@ -112,12 +196,10 @@ class _EachPaperCardState extends State<EachPaperCard> {
         bottom: 6.0,
       ),
       decoration: BoxDecoration(
-        color: ThemeProvider.themeOf(context)
-                .data
-                .textTheme
-                .bodyLarge
-                ?.color
-                ?.withAlpha(12) ??
+        color:
+            ThemeProvider.themeOf(
+              context,
+            ).data.textTheme.bodyLarge?.color?.withAlpha(12) ??
             Colors.grey[100],
         borderRadius: BorderRadius.circular(10.0),
       ),
@@ -128,14 +210,13 @@ class _EachPaperCardState extends State<EachPaperCard> {
           IDAndDate(
             id: widget.eachPaper.id,
             date: widget.eachPaper.publishedAt,
+            primaryCategory: primaryCategory(),
           ),
 
           // TITLE
           GestureDetector(
-            onTap: () => widget.parseAndLaunchURL(
-              widget.eachPaper.id,
-              widget.eachPaper.title,
-            ),
+            onTap: () =>
+                widget.parseAndLaunchURL(paperPdfUrl(), widget.eachPaper.title),
             child: Container(
               padding: const EdgeInsets.only(bottom: 5.0),
               child: Paper.containsLatex(title)
@@ -143,14 +224,14 @@ class _EachPaperCardState extends State<EachPaperCard> {
                       child: TeXViewDocument(
                         title,
                         style: TeXViewStyle(
-                          contentColor: ThemeProvider.themeOf(context)
-                              .data
-                              .textTheme
-                              .bodyLarge
-                              ?.color,
+                          contentColor: ThemeProvider.themeOf(
+                            context,
+                          ).data.textTheme.bodyLarge?.color,
                           textAlign: TeXViewTextAlign.left,
                           fontStyle: TeXViewFontStyle(
-                              fontSize: 16, fontWeight: TeXViewFontWeight.bold),
+                            fontSize: 16,
+                            fontWeight: TeXViewFontWeight.bold,
+                          ),
                         ),
                       ),
                     )
@@ -168,18 +249,14 @@ class _EachPaperCardState extends State<EachPaperCard> {
             padding: const EdgeInsets.only(bottom: 2.0),
             child: Text(
               "Published: ${widget.eachPaper.publishedAt}",
-              style: const TextStyle(
-                fontSize: 12.0,
-              ),
+              style: const TextStyle(fontSize: 12.0),
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: 10.0),
             child: Text(
               "Authors: ${widget.eachPaper.authors}",
-              style: const TextStyle(
-                fontSize: 13.0,
-              ),
+              style: const TextStyle(fontSize: 13.0),
             ),
           ),
 
@@ -199,36 +276,35 @@ class _EachPaperCardState extends State<EachPaperCard> {
                       vertical: 8.0,
                     ),
                     decoration: BoxDecoration(
-                      color: ThemeProvider.themeOf(context).id.toString() ==
+                      color:
+                          ThemeProvider.themeOf(context).id.toString() ==
                               "mixed_theme"
                           ? const Color(0xff121212)
                           : Colors.transparent,
                       border: Border.all(
-                        color: ThemeProvider.themeOf(context).id.toString() ==
+                        color:
+                            ThemeProvider.themeOf(context).id.toString() ==
                                 "mixed_theme"
                             ? const Color(0xff121212)
-                            : ThemeProvider.themeOf(context)
-                                    .data
-                                    .textTheme
-                                    .bodyLarge!
-                                    .color ??
-                                Colors.black,
+                            : ThemeProvider.themeOf(
+                                    context,
+                                  ).data.textTheme.bodyLarge!.color ??
+                                  Colors.black,
                       ),
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
                       "Summary",
                       style: TextStyle(
-                        color: ThemeProvider.themeOf(context).id.toString() ==
+                        color:
+                            ThemeProvider.themeOf(context).id.toString() ==
                                 "mixed_theme"
-                            ? ThemeProvider.themeOf(context)
-                                .data
-                                .scaffoldBackgroundColor
-                            : ThemeProvider.themeOf(context)
-                                .data
-                                .textTheme
-                                .bodyLarge
-                                ?.color,
+                            ? ThemeProvider.themeOf(
+                                context,
+                              ).data.scaffoldBackgroundColor
+                            : ThemeProvider.themeOf(
+                                context,
+                              ).data.textTheme.bodyLarge?.color,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -244,61 +320,57 @@ class _EachPaperCardState extends State<EachPaperCard> {
                   isBookmarked == false
                       ? Icons.bookmark_border
                       : Icons.bookmark,
-                  color: ThemeProvider.themeOf(context)
-                      .data
-                      .textTheme
-                      .bodyLarge
-                      ?.color,
+                  color: ThemeProvider.themeOf(
+                    context,
+                  ).data.textTheme.bodyLarge?.color,
                 ),
               ),
               IconButton(
                 onPressed: () {
-                  shareLink(
-                    widget.eachPaper.id,
-                  );
+                  shareLink(paperPdfUrl());
                 },
                 icon: Icon(
                   Ionicons.share_outline,
-                  color: ThemeProvider.themeOf(context)
-                      .data
-                      .textTheme
-                      .bodyLarge
-                      ?.color,
+                  color: ThemeProvider.themeOf(
+                    context,
+                  ).data.textTheme.bodyLarge?.color,
                 ),
               ),
               IconButton(
                 onPressed: () {
-                  widget.downloadPaper(
-                    widget.eachPaper.id,
-                  );
+                  widget.downloadPaper(paperPdfUrl());
                 },
                 icon: Icon(
                   Icons.downloading_outlined,
-                  color: ThemeProvider.themeOf(context)
-                      .data
-                      .textTheme
-                      .bodyLarge
-                      ?.color,
+                  color: ThemeProvider.themeOf(
+                    context,
+                  ).data.textTheme.bodyLarge?.color,
                 ),
               ),
+              // IconButton(
+              //   onPressed: showMetadata,
+              //   icon: Icon(
+              //     Icons.info_outline,
+              //     color: ThemeProvider.themeOf(
+              //       context,
+              //     ).data.textTheme.bodyLarge?.color,
+              //   ),
+              // ),
               IconButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AIChatPage(
-                        paperData: widget.eachPaper,
-                      ),
+                      builder: (context) =>
+                          AIChatPage(paperData: widget.eachPaper),
                     ),
                   );
                 },
                 icon: Icon(
                   Icons.auto_awesome_outlined,
-                  color: ThemeProvider.themeOf(context)
-                      .data
-                      .textTheme
-                      .bodyLarge
-                      ?.color,
+                  color: ThemeProvider.themeOf(
+                    context,
+                  ).data.textTheme.bodyLarge?.color,
                 ),
               ),
             ],
