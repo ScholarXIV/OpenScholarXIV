@@ -96,4 +96,4 @@ Thank you to arXiv for the use of its open access interoperability.
 
 ---
 
-_Made with 🤍 by Dream Intelligence_
+_Made with 🤍 by [ScholarXIV](https://ScholarXIV.com)_

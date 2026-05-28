@@ -25,6 +25,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   var sourceCodeURL = "https://github.com/dagmawibabi/OpenScholarXIV";
+  var scholarXivURL = "https://ScholarXIV.com";
   int startPagination = 0;
   int maxContent = 30;
   int paginationGap = 30;
@@ -355,13 +356,32 @@ class _HomePageState extends State<HomePage> {
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(top: 5.0),
-                child: Text(
-                  "Made with 🤍 by Dream Intelligence",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey[600]!,
-                    fontSize: 12.0,
-                  ),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      "Made with 🤍 by ",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey[600]!,
+                        fontSize: 12.0,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        launchUrl(Uri.parse(scholarXivURL));
+                      },
+                      child: const Text(
+                        "ScholarXIV",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontSize: 12.0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

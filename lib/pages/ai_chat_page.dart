@@ -31,6 +31,126 @@ class _AIChatPageState extends State<AIChatPage> {
   final _systemLoadingTrigger = "SYMLOADINGANIMATION";
 
   Gemini? model;
+  String selectedModelName = Gemini.defaultModelName;
+  var geminiModels = [GeminiModelOption.fallback()];
+  var isLoadingGeminiModels = false;
+
+  String get selectedModelLabel {
+    return geminiModels
+        .firstWhere(
+          (modelOption) => modelOption.id == selectedModelName,
+          orElse: () => GeminiModelOption(
+            id: selectedModelName,
+            label: GeminiModelOption.labelFromModelName(selectedModelName),
+          ),
+        )
+        .label;
+  }
+
+  bool get hasPaperTitle => widget.paperData?.title.trim().isNotEmpty ?? false;
+
+  PopupMenuEntry<String> _buildLoadingModelsMenuItem() {
+    return PopupMenuItem<String>(
+      enabled: false,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 18.0,
+            height: 18.0,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.0,
+              color: ThemeProvider.themeOf(
+                context,
+              ).data.textTheme.bodyLarge?.color,
+            ),
+          ),
+          const SizedBox(width: 10.0),
+          Text(
+            "Loading models...",
+            style: TextStyle(
+              color: ThemeProvider.themeOf(
+                context,
+              ).data.textTheme.bodyLarge?.color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  PopupMenuEntry<String> _buildModelMenuItem(GeminiModelOption modelOption) {
+    final isSelected = modelOption.id == selectedModelName;
+
+    return PopupMenuItem<String>(
+      value: modelOption.id,
+      child: Row(
+        children: [
+          Icon(
+            isSelected ? Icons.check : Icons.auto_awesome_outlined,
+            size: 18.0,
+            color: ThemeProvider.themeOf(
+              context,
+            ).data.textTheme.bodyLarge?.color,
+          ),
+          const SizedBox(width: 10.0),
+          Flexible(
+            child: Text(
+              modelOption.label,
+              style: TextStyle(
+                color: ThemeProvider.themeOf(
+                  context,
+                ).data.textTheme.bodyLarge?.color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<PopupMenuEntry<String>> buildModelMenuItems() {
+    if (isLoadingGeminiModels) return [_buildLoadingModelsMenuItem()];
+    return geminiModels.map(_buildModelMenuItem).toList();
+  }
+
+  Widget _buildContextTag(String label, {double maxWidth = 120.0}) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      margin: const EdgeInsets.only(right: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18.0),
+        color:
+            ThemeProvider.themeOf(
+              context,
+            ).data.textTheme.bodyLarge?.color?.withAlpha(12) ??
+            Colors.grey[100],
+      ),
+      child: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: 12.0,
+          color: ThemeProvider.themeOf(context).data.textTheme.bodyLarge?.color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModelSelectorTag() {
+    return PopupMenuButton<String>(
+      tooltip: "Select model",
+      enabled: !isLoadingGeminiModels && geminiModels.isNotEmpty,
+      color: ThemeProvider.themeOf(context).data.scaffoldBackgroundColor,
+      initialValue: hasGeminiModel(selectedModelName)
+          ? selectedModelName
+          : null,
+      onSelected: selectGeminiModel,
+      itemBuilder: (context) => buildModelMenuItems(),
+      child: _buildContextTag(selectedModelLabel),
+    );
+  }
 
   var paperPromptSuggestions = [
     "Who wrote this paper?",
@@ -95,20 +215,79 @@ class _AIChatPageState extends State<AIChatPage> {
     setState(() {});
   }
 
-  void configModel() async {
+  bool hasGeminiModel(String modelName) {
+    return geminiModels.any((modelOption) => modelOption.id == modelName);
+  }
+
+  String resolveSelectedModelName(dynamic savedModelName) {
+    if (savedModelName is String && hasGeminiModel(savedModelName)) {
+      return savedModelName;
+    }
+
+    if (hasGeminiModel(Gemini.defaultModelName)) {
+      return Gemini.defaultModelName;
+    }
+
+    return geminiModels.first.id;
+  }
+
+  Future<void> selectGeminiModel(String modelName) async {
+    if (modelName == selectedModelName || !hasGeminiModel(modelName)) {
+      return;
+    }
+
+    selectedModelName = modelName;
+
     Box apiBox = await Hive.openBox("apibox");
-    apiKey = await apiBox.get("apikey") ?? "";
+    await apiBox.put("geminiModel", modelName);
     await Hive.close();
 
     if (apiKey.isNotEmpty) {
-      model = await Gemini.newModel(apiKey, paper: widget.paperData);
+      model = await Gemini.newModel(
+        apiKey,
+        paper: widget.paperData,
+        modelName: selectedModelName,
+      );
+      chatList.clear();
+    }
+
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void configModel() async {
+    Box apiBox = await Hive.openBox("apibox");
+    apiKey = await apiBox.get("apikey") ?? "";
+    final savedModelName = await apiBox.get("geminiModel");
+    await Hive.close();
+
+    if (apiKey.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          apiKeySettingsOn = false;
+          isLoadingGeminiModels = true;
+        });
+      }
+
+      geminiModels = await Gemini.listModels(apiKey);
+      selectedModelName = resolveSelectedModelName(savedModelName);
+      model = await Gemini.newModel(
+        apiKey,
+        paper: widget.paperData,
+        modelName: selectedModelName,
+      );
       apiKeySettingsOn = false;
     } else {
+      geminiModels = [GeminiModelOption.fallback()];
+      selectedModelName = Gemini.defaultModelName;
       model = null;
       apiKeySettingsOn = true;
     }
 
-    setState(() {});
+    if (!mounted) return;
+    setState(() {
+      isLoadingGeminiModels = false;
+    });
   }
 
   void toggleAPIKeySettings() {
@@ -152,18 +331,14 @@ class _AIChatPageState extends State<AIChatPage> {
             onPressed: () {
               toggleTools();
             },
-            icon: const Icon(
-              Icons.menu_open_rounded,
-            ),
+            icon: const Icon(Icons.menu_open_rounded),
           ),
           // API KEY SETTINGS
           IconButton(
             onPressed: () {
               toggleAPIKeySettings();
             },
-            icon: const Icon(
-              Ionicons.key_outline,
-            ),
+            icon: const Icon(Ionicons.key_outline),
           ),
 
           // CLEAR CHAT
@@ -171,9 +346,7 @@ class _AIChatPageState extends State<AIChatPage> {
             onPressed: () {
               clearChat();
             },
-            icon: const Icon(
-              Icons.delete_forever_outlined,
-            ),
+            icon: const Icon(Icons.delete_forever_outlined),
           ),
           const SizedBox(width: 5.0),
         ],
@@ -195,26 +368,22 @@ class _AIChatPageState extends State<AIChatPage> {
                             child: Icon(
                               Icons.auto_awesome_outlined,
                               size: 30.0,
-                              color: ThemeProvider.themeOf(context)
-                                  .data
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.color,
+                              color: ThemeProvider.themeOf(
+                                context,
+                              ).data.textTheme.bodyLarge?.color,
                             ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 50.0,
                             ),
-                            child: const Text(
-                              "This AI conversation is powered by Google's Gemini 1.5 Flash. You can have conversations about the current paper here.",
+                            child: Text(
+                              "This AI conversation is powered by $selectedModelLabel. You can have conversations about the current paper here.",
                               textAlign: TextAlign.center,
                             ),
                           ),
                           apiKeySettingsOn == true
-                              ? APISettings(
-                                  configAPIKey: configModel,
-                                )
+                              ? APISettings(configAPIKey: configModel)
                               : PromptSuggestions(
                                   chatWithAI: chatWithAI,
                                   userMessageController: userMessageController,
@@ -231,72 +400,88 @@ class _AIChatPageState extends State<AIChatPage> {
                     itemCount: chatList.length,
                     itemBuilder: (context, index) {
                       final item = chatList[index];
-                      return EachChatMessage(
-                        response: item,
-                        toolsOn: toolsOn,
-                      );
+                      return EachChatMessage(response: item, toolsOn: toolsOn);
                     },
                   ),
           ),
           // Chat Box and Send Button
           Padding(
-            padding: const EdgeInsets.only(left: 10.0, bottom: 8.0, top: 8.0),
-            child: Row(
+            padding: const EdgeInsets.only(left: 10.0, bottom: 8.0, top: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 18.0, right: 18.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30.0),
-                      color: ThemeProvider.themeOf(context)
-                              .data
-                              .textTheme
-                              .bodyLarge
-                              ?.color
-                              ?.withAlpha(12) ??
-                          Colors.grey[100],
-                    ),
-                    child: TextField(
-                      controller: userMessageController,
-                      enabled: !(apiKeySettingsOn == true),
-                      cursorColor:
-                          ThemeProvider.themeOf(context).id == "dark_theme"
-                              ? Colors.white
-                              : ThemeProvider.themeOf(context)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6.0),
+                  child: Row(
+                    children: [
+                      _buildModelSelectorTag(),
+                      if (hasPaperTitle)
+                        Expanded(
+                          child: _buildContextTag(
+                            widget.paperData!.title,
+                            maxWidth: double.infinity,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 18.0, right: 18.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30.0),
+                          color:
+                              ThemeProvider.themeOf(context)
                                   .data
                                   .textTheme
                                   .bodyLarge
-                                  ?.color,
-                      style: TextStyle(
-                        color: ThemeProvider.themeOf(context).id == "dark_theme"
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: widget.paperData.toString() == ""
-                            ? "ask about anything..."
-                            : 'ask about the paper...',
-                        hintStyle: TextStyle(color: Colors.grey[700]),
-                        border: InputBorder.none,
+                                  ?.color
+                                  ?.withAlpha(12) ??
+                              Colors.grey[100],
+                        ),
+                        child: TextField(
+                          controller: userMessageController,
+                          enabled: !(apiKeySettingsOn == true),
+                          cursorColor:
+                              ThemeProvider.themeOf(context).id == "dark_theme"
+                              ? Colors.white
+                              : ThemeProvider.themeOf(
+                                  context,
+                                ).data.textTheme.bodyLarge?.color,
+                          style: TextStyle(
+                            color:
+                                ThemeProvider.themeOf(context).id ==
+                                    "dark_theme"
+                                ? Colors.white
+                                : Colors.black,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: widget.paperData.toString() == ""
+                                ? "ask about anything..."
+                                : 'ask about the paper...',
+                            hintStyle: TextStyle(color: Colors.grey[700]),
+                            border: InputBorder.none,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: IconButton(
-                    onPressed: () {
-                      apiKey == "" ? () {} : chatWithAI();
-                    },
-                    icon: Icon(
-                      Ionicons.paper_plane_outline,
-                      color: ThemeProvider.themeOf(context)
-                          .data
-                          .textTheme
-                          .bodyLarge
-                          ?.color,
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: IconButton(
+                        onPressed: apiKey.isEmpty || model == null
+                            ? null
+                            : chatWithAI,
+                        icon: Icon(
+                          Ionicons.paper_plane_outline,
+                          color: ThemeProvider.themeOf(
+                            context,
+                          ).data.textTheme.bodyLarge?.color,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
