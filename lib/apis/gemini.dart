@@ -10,7 +10,7 @@ class Gemini {
   Gemini._internal(String apiKey, String systemPrompt) {
     _model = GenerativeModel(
       apiKey: apiKey,
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       systemInstruction: Content.system(systemPrompt),
       generationConfig: GenerationConfig(
         temperature: 1,

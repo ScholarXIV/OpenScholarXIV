@@ -1,4 +1,4 @@
-<img src="assets/banners/ScholArxivLogo.png">
+<img src="assets/banners/OpenScholarXIVLogo.png">
 
 <div align="center">
 
@@ -6,28 +6,28 @@
 [![YouTube](https://img.shields.io/badge/Twitter-1DA1F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/dagmawibabi)
 [![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:1babidagi@gmail.com)
 
-# ScholArxiv
+# OpenScholarXIV
 
 </div>
 
 <br />
 
-**ScholArxiv** is an open-source, aesthetic and minimal app that allows users to search, read, bookmark, share, download and view summaries of academic papers from the arXiv repository. Now you can configure your Gemini API key and converse with AI to expand and dive deeper into the papers you're exploring.
+**OpenScholarXIV** is an open-source, aesthetic and minimal app that allows users to search, read, bookmark, share, download and view summaries of academic papers from the arXiv repository. Now you can configure your Gemini API key and converse with AI to expand and dive deeper into the papers you're exploring.
 
-**[⬇️ Download Now](https://github.com/dagmawibabi/ScholArxiv/releases/download/v3.0.0/ScholArxiv.apk)** for the Latest Version. Enjoy!
+**[⬇️ Download Now](https://github.com/dagmawibabi/OpenScholarXIV/releases/download/v3.0.0/OpenScholarXIV.apk)** for the Latest Version. Enjoy!
 
 <!-- Center Aligned the images in one row -->
 <div align="center">
-<img src="assets/banners/ScholArxiv5.png" width="400">
-<img src="assets/banners/ScholArxiv6.png" width="400">
+<img src="assets/banners/OpenScholarXIV5.png" width="400">
+<img src="assets/banners/OpenScholarXIV6.png" width="400">
 
-<img src="assets/banners/ScholArxiv7.png" width="400">
-<img src="assets/banners/ScholArxiv.png" width="400">
+<img src="assets/banners/OpenScholarXIV7.png" width="400">
+<img src="assets/banners/OpenScholarXIV.png" width="400">
 </div>
 
-<!-- ![](assets/banners/ScholArxiv5.png)
-![](assets/banners/ScholArxiv6.png)
-![](assets/banners/ScholArxiv7.png) -->
+<!-- ![](assets/banners/OpenScholarXIV5.png)
+![](assets/banners/OpenScholarXIV6.png)
+![](assets/banners/OpenScholarXIV7.png) -->
 
 ## 💰 Features
 
@@ -51,7 +51,7 @@
 
 -   Featured in InsTech's [1st Edition magazine](linkedin.com/pulse/top-10-latest-under-the-radar-ai-tech-tools-instechs-1st-waleed-zjq2f) and [YouTube Video](https://youtu.be/jFltWTk6YBE?si=PiPN-9tb566ROAiJ&t=216)
 
--   InnoVirtuoso's wrote a complete [explainer article](https://innovirtuoso.com/technology/exploring-scholarxiv-an-aesthetic-and-minimal-app-for-academic-papers/) about ScholArxiv
+-   InnoVirtuoso's wrote a complete [explainer article](https://innovirtuoso.com/technology/exploring-scholarxiv-an-aesthetic-and-minimal-app-for-academic-papers/) about OpenScholarXIV
 
 -   And Many More! THANK YOU SO MUCH FOR THE SUPPORT!
 
@@ -74,17 +74,17 @@ You can use the issues tab to get inspiration.
 <!-- Center Aligned the images in one row -->
 
 <div align="center">
-<img src="assets/banners/ScholArxiv2.png" width="400">
+<img src="assets/banners/OpenScholarXIV2.png" width="400">
 
-<img src="assets/banners/ScholArxiv3.png" width="400">
-<img src="assets/banners/ScholArxiv4.png" width="400">
+<img src="assets/banners/OpenScholarXIV3.png" width="400">
+<img src="assets/banners/OpenScholarXIV4.png" width="400">
 </div>
 
 <!--
-![](assets/banners/ScholArxiv.png)
-![](assets/banners/ScholArxiv2.png)
-![](assets/banners/ScholArxiv3.png)
-![](assets/banners/ScholArxiv4.png) -->
+![](assets/banners/OpenScholarXIV.png)
+![](assets/banners/OpenScholarXIV2.png)
+![](assets/banners/OpenScholarXIV3.png)
+![](assets/banners/OpenScholarXIV4.png) -->
 
 ## License
 

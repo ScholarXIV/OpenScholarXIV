@@ -19,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
         height: 150.0,
         width: 150.0,
         child: Lottie.asset(
-          "assets/animation/ScholArxivLoader.json",
+          "assets/animation/OpenScholarXIVLoader.json",
         ),
       ),
       nextScreen: const HomePage(),

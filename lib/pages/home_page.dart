@@ -24,7 +24,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  var sourceCodeURL = "https://github.com/dagmawibabi/ScholArxiv";
+  var sourceCodeURL = "https://github.com/dagmawibabi/OpenScholarXIV";
   int startPagination = 0;
   int maxContent = 30;
   int paginationGap = 30;
@@ -167,7 +167,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor:
             ThemeProvider.themeOf(context).data.appBarTheme.backgroundColor,
         title: const Text(
-          "ScholArxiv",
+          "OpenScholarXIV",
         ),
         actions: [
           // HELP

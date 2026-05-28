@@ -30,7 +30,7 @@ class _AIChatPageState extends State<AIChatPage> {
 
   final _systemLoadingTrigger = "SYMLOADINGANIMATION";
 
-  late final Gemini model;
+  Gemini? model;
 
   var paperPromptSuggestions = [
     "Who wrote this paper?",
@@ -46,11 +46,11 @@ class _AIChatPageState extends State<AIChatPage> {
 
   var generalPromptSuggestions = [
     "What is arXiv?",
-    "Tell me about ScholArxiv?",
+    "Tell me about OpenScholarXIV?",
     "Most profound research papers published?",
     "How can I get started writing research papers?",
     "Precautions to take while reading research papers?",
-    "Where can I view the source code of ScholArxiv?",
+    "Where can I view the source code of OpenScholarXIV?",
     "List the main sections of research papers?",
     "Purpose of research papers?",
   ];
@@ -72,12 +72,14 @@ class _AIChatPageState extends State<AIChatPage> {
     var message = userMessageController.text.trim();
     userMessageController.clear();
 
-    if (message != "") {
+    final currentModel = model;
+
+    if (message != "" && currentModel != null) {
       chatList.add(ChatMessage(Role.user, message));
       chatList.add(ChatMessage(Role.system, _systemLoadingTrigger));
       scrollToTheBottom();
 
-      ChatMessage aiResponseObject = await model.sendMessage(message);
+      ChatMessage aiResponseObject = await currentModel.sendMessage(message);
 
       chatList.removeLast();
       setState(() {});
@@ -102,8 +104,10 @@ class _AIChatPageState extends State<AIChatPage> {
       model = await Gemini.newModel(apiKey, paper: widget.paperData);
       apiKeySettingsOn = false;
     } else {
+      model = null;
       apiKeySettingsOn = true;
     }
+
     setState(() {});
   }
 
@@ -138,7 +142,10 @@ class _AIChatPageState extends State<AIChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("ScholArxiv AI"),
+        title: const Text(
+          "OpenScholarXIV",
+          // style: TextStyle(fontSize: 15.0),
+        ),
         actions: [
           // TOGGLE TOOLS
           IconButton(

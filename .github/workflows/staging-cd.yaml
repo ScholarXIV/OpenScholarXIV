@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
           format: HTML
           message: |
-            project: ScholArxiv
+            project: OpenScholarXIV
             build_type: Staging
             commit: <a href="https://github.com/${{ github.repository }}/commit/${{ github.sha }}">${{ env.SHORT_SHA }}</a>
             diff: <a href="https://github.com/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}">${{ env.SHORT_BASE_SHA }}...${{ env.SHORT_HEAD_SHA }}</a>
@@ -42,7 +42,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 17
-          
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -74,7 +74,7 @@ jobs:
           format: HTML
           message: |
             version: ${{ env.BUILD_VERSION }}
-            client_id: ScholArxiv
+            client_id: OpenScholarXIV
             build_type: Staging
             commit: <a href="https://github.com/${{ github.repository }}/commit/${{ github.sha }}">${{ env.SHORT_SHA }}</a>
             diff: <a href="https://github.com/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}">${{ env.SHORT_BASE_SHA }}...${{ env.SHORT_HEAD_SHA }}</a>
