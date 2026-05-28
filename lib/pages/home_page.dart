@@ -24,7 +24,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  var sourceCodeURL = "https://github.com/dagmawibabi/OpenScholarXIV";
+  var sourceCodeURL = "https://github.com/ScholarXIV/OpenScholarXIV";
   var scholarXivURL = "https://ScholarXIV.com";
   int startPagination = 0;
   int maxContent = 30;
