@@ -193,7 +193,7 @@ class _APISettingsState extends State<APISettings> {
               right: 40.0,
             ),
             child: Text(
-              "The free tier of the Gemini API provides 15 RPM (requests per minute), 1M TPM (tokens per minute), 1500 RPD (requests per day) and 1M Context Caching but data exchanged will be used by Google to improve their service.",
+              "Gemini API free-tier limits vary by model and project tier. Check your active quota in Google AI Studio. Unpaid Gemini API usage may be used by Google to improve its products and services.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[500]!,
