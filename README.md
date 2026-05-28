@@ -2,7 +2,7 @@
 
 OpenScholarXIV is a free and open-source app for finding, reading, bookmarking, summarizing, and discussing arXiv papers with AI.
 
-[Download the latest APK](https://github.com/ScholarXIV/OpenScholarXIV/releases/download/v3.0.0/OpenScholarXIV.apk)
+[Download the latest APK](https://github.com/ScholarXIV/OpenScholarXIV/releases/tag/v4.0.0)
 
 <div align="center">
   <img src="assets/banners/OpenScholarXIV7.png" width="700" alt="OpenScholarXIV cover">
