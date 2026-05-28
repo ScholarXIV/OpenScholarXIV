@@ -1,5 +1,8 @@
 name: Build and distribute (staging)
 
+env:
+  FLUTTER_VERSION: "3.41.3"
+
 on:
   push:
     branches:
@@ -46,9 +49,14 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ secrets.FLUTTER_VERSION || env.FLUTTER_VERSION || '3.4.4' }} # goes for secrets, then environments defaults to 3.4.4
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
 
       - name: Build
+        env:
+          STAGING_TELEGRAM_BOT_TOKEN: ${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
+          STAGING_TELEGRAM_CHAT_ID: ${{ secrets.STAGING_TELEGRAM_CHAT_ID }}
         run: chmod +x ./scripts/build-and-filter-errors.sh && ./scripts/build-and-filter-errors.sh
 
       - name: Send error
