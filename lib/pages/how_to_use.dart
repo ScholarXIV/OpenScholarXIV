@@ -36,7 +36,7 @@ class HowToUsePage extends StatelessWidget {
           ),
           _buildSection(
             'Read Papers In-app',
-            'assets/banners/OpenScholarXIV9.png',
+            'assets/banners/OpenScholarXIV6.png',
             'Read any paper directly in the app for a seamless and distraction free experience.',
             isDarkTheme,
             context,

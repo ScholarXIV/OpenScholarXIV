@@ -111,7 +111,6 @@ flutter:
         - assets/banners/OpenScholarXIV6.png
         - assets/banners/OpenScholarXIV7.png
         - assets/banners/OpenScholarXIV8.png
-        - assets/banners/OpenScholarXIV9.png
 
     # An image asset can refer to one or more resolution-specific "variants", see
     # https://flutter.dev/assets-and-images/#resolution-aware
