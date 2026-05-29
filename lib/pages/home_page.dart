@@ -1,13 +1,14 @@
 // ignore_for_file: file_names
 import 'package:arxiv/apis/arxiv.dart';
 import 'package:arxiv/components/each_paper_card.dart';
-import 'package:arxiv/components/loading_indicator.dart';
+import 'package:arxiv/components/paper_card_skeleton.dart';
 import 'package:arxiv/components/search_box.dart';
 import 'package:arxiv/models/paper.dart';
 import 'package:arxiv/pages/ai_chat_page.dart';
 import 'package:arxiv/pages/bookmarks_page.dart';
-import 'package:arxiv/pages/how_to_use.dart';
 import 'package:arxiv/pages/pdf_viewer.dart';
+import 'package:arxiv/pages/settings_page.dart';
+import 'package:arxiv/theme/app_theme.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
@@ -38,32 +39,42 @@ class _HomePageState extends State<HomePage> {
   var dio = Dio();
   List<Paper> data = [];
   ArxivSearchResult? lastSearchResult;
+  String? homeScreenError;
+  int _searchRequestSerial = 0;
 
   Future<void> search({bool? resetPagination}) async {
+    final requestSerial = ++_searchRequestSerial;
     if (resetPagination == true) {
       startPagination = 0;
     }
-    isHomeScreenLoading = true;
-    data = [];
-    setState(() {});
+    setState(() {
+      isHomeScreenLoading = true;
+      homeScreenError = null;
+      data = [];
+    });
 
     var searchTerm = searchTermController.text.toString().trim();
+    late final ArxivSearchResult result;
     if (searchTerm.isNotEmpty) {
-      final result = await Arxiv.searchWithMetadata(
+      result = await Arxiv.searchWithMetadata(
         searchTerm,
         page: startPagination,
         pageSize: maxContent,
       );
-      lastSearchResult = result;
-      data = result.papers;
     } else {
-      final result = await suggestedPapers();
-      lastSearchResult = result;
-      data = result.papers;
+      result = await suggestedPapers();
     }
 
-    isHomeScreenLoading = false;
-    setState(() {});
+    if (!mounted || requestSerial != _searchRequestSerial) {
+      return;
+    }
+
+    setState(() {
+      lastSearchResult = result;
+      data = result.papers;
+      homeScreenError = result.errorMessage;
+      isHomeScreenLoading = false;
+    });
   }
 
   Future<void> toggleSortOrder() async {
@@ -90,18 +101,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<ArxivSearchResult> suggestedPapers() async {
-    var maxRetries = 10;
-    var suggested = const ArxivSearchResult(
-      papers: [],
-      feed: {},
-      rawResponse: {},
-      rawXml: "",
-    );
-    while (suggested.papers.isEmpty && maxRetries > 0) {
-      suggested = await Arxiv.suggestWithMetadata(pageSize: maxContent);
-      maxRetries--;
-    }
-    return suggested;
+    return Arxiv.suggestWithMetadata(pageSize: maxContent);
   }
 
   var paperTitle = "";
@@ -180,22 +180,24 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final currentTheme = ThemeProvider.themeOf(context);
+    final pairedThemeId = pairedBrightnessThemeId(currentTheme.id);
+    final isDark = colorScheme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: ThemeProvider.themeOf(
-          context,
-        ).data.appBarTheme.backgroundColor,
         title: const Text("OpenScholarXIV"),
         actions: [
-          // HELP
+          // SETTINGS
           IconButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const HowToUsePage()),
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
               );
             },
-            icon: const Icon(Icons.help_outline),
+            icon: const Icon(Icons.settings_outlined),
           ),
 
           // BOOKMARKS
@@ -217,14 +219,13 @@ class _HomePageState extends State<HomePage> {
           // CHANGE THEME
           IconButton(
             onPressed: () {
-              ThemeProvider.controllerOf(context).nextTheme();
+              final controller = ThemeProvider.controllerOf(context);
+              if (controller.hasTheme(pairedThemeId)) {
+                controller.setTheme(pairedThemeId);
+              }
             },
             icon: Icon(
-              ThemeProvider.themeOf(context).id == "light_theme"
-                  ? Icons.dark_mode_outlined
-                  : ThemeProvider.themeOf(context).id == "dark_theme"
-                  ? Icons.sunny_snowing
-                  : Ionicons.sunny,
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             ),
           ),
 
@@ -246,8 +247,8 @@ class _HomePageState extends State<HomePage> {
       ),
       body: LiquidPullToRefresh(
         onRefresh: search,
-        backgroundColor: Colors.white,
-        color: const Color(0xff121212),
+        backgroundColor: colorScheme.surface,
+        color: colorScheme.primary,
         animSpeedFactor: 2.0,
         child: ListView(
           children: [
@@ -260,7 +261,37 @@ class _HomePageState extends State<HomePage> {
 
             // Data or Loading
             isHomeScreenLoading == true
-                ? const LoadingIndicator(topPadding: 200.0)
+                ? const PaperFeedSkeleton()
+                : homeScreenError != null
+                ? Padding(
+                    padding: const EdgeInsets.only(
+                      top: 160.0,
+                      left: 24.0,
+                      right: 24.0,
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.cloud_off_outlined,
+                          color: colorScheme.onSurfaceVariant,
+                          size: 42.0,
+                        ),
+                        const SizedBox(height: 12.0),
+                        Text(
+                          homeScreenError!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 12.0),
+                        TextButton(
+                          onPressed: () {
+                            search(resetPagination: true);
+                          },
+                          child: const Text("Try Again"),
+                        ),
+                      ],
+                    ),
+                  )
                 : data.isNotEmpty
                 ? Column(
                     children: data.map((eachPaper) {
@@ -294,14 +325,14 @@ class _HomePageState extends State<HomePage> {
                         icon: Icon(
                           Ionicons.arrow_back,
                           color: startPagination < paginationGap
-                              ? Colors.white
-                              : Colors.grey[400]!,
+                              ? colorScheme.onSurface.withAlpha(64)
+                              : colorScheme.onSurfaceVariant,
                           size: 20.0,
                         ),
                       ),
                       Text(
                         "Showing results from $startPagination to ${startPagination + maxContent}",
-                        style: TextStyle(color: Colors.grey[600]!),
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       IconButton(
                         onPressed: () {
@@ -310,7 +341,7 @@ class _HomePageState extends State<HomePage> {
                         },
                         icon: Icon(
                           Ionicons.arrow_forward,
-                          color: Colors.grey[400]!,
+                          color: colorScheme.onSurfaceVariant,
                           size: 20.0,
                         ),
                       ),
@@ -325,7 +356,10 @@ class _HomePageState extends State<HomePage> {
                 child: Text(
                   "Thank you to arXiv for use of its \nopen access interoperability.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[400]!, fontSize: 12.0),
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 12.0,
+                  ),
                 ),
               ),
             ),
@@ -334,10 +368,10 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   launchUrl(Uri.parse(sourceCodeURL));
                 },
-                child: const Text(
+                child: Text(
                   "View Source Code on GitHub",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.blueAccent, fontSize: 12.0),
+                  style: TextStyle(color: colorScheme.primary, fontSize: 12.0),
                 ),
               ),
             ),
@@ -353,7 +387,7 @@ class _HomePageState extends State<HomePage> {
                       "Made with 🤍 by ",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.grey[600]!,
+                        color: colorScheme.onSurfaceVariant,
                         fontSize: 12.0,
                       ),
                     ),
@@ -361,11 +395,11 @@ class _HomePageState extends State<HomePage> {
                       onTap: () {
                         launchUrl(Uri.parse(scholarXivURL));
                       },
-                      child: const Text(
+                      child: Text(
                         "ScholarXIV",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.blueAccent,
+                          color: colorScheme.primary,
                           fontSize: 12.0,
                         ),
                       ),

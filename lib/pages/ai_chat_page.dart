@@ -5,11 +5,15 @@ import 'package:arxiv/components/api_settings.dart';
 import 'package:arxiv/components/each_chat_message.dart';
 import 'package:arxiv/components/prompt_suggestions.dart';
 import 'package:arxiv/models/chat_message.dart';
+import 'package:arxiv/models/chat_thread.dart';
 import 'package:arxiv/models/paper.dart';
+import 'package:arxiv/services/chat_history_store.dart';
+import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:theme_provider/theme_provider.dart';
+
+enum _ChatThreadMenuAction { rename, delete }
 
 class AIChatPage extends StatefulWidget {
   const AIChatPage({super.key, required this.paperData});
@@ -21,12 +25,20 @@ class AIChatPage extends StatefulWidget {
 }
 
 class _AIChatPageState extends State<AIChatPage> {
+  final ChatHistoryStore _chatHistoryStore = ChatHistoryStore();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   TextEditingController userMessageController = TextEditingController();
   ScrollController scrollController = ScrollController();
   var apiKey = "";
   List<ChatMessage> chatList = [];
+  List<ChatThread> chatThreads = [];
+  ChatThread? activeThread;
+  Paper? activePaperData;
+  String? renamingThreadId;
+  String renameDraft = "";
   var apiKeySettingsOn = false;
   var toolsOn = true;
+  var isLoadingChatHistory = true;
 
   final _systemLoadingTrigger = "SYMLOADINGANIMATION";
 
@@ -47,9 +59,11 @@ class _AIChatPageState extends State<AIChatPage> {
         .label;
   }
 
-  bool get hasPaperTitle => widget.paperData?.title.trim().isNotEmpty ?? false;
+  bool get hasPaperTitle => activePaperData?.title.trim().isNotEmpty ?? false;
 
   PopupMenuEntry<String> _buildLoadingModelsMenuItem() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return PopupMenuItem<String>(
       enabled: false,
       child: Row(
@@ -59,19 +73,13 @@ class _AIChatPageState extends State<AIChatPage> {
             height: 18.0,
             child: CircularProgressIndicator(
               strokeWidth: 2.0,
-              color: ThemeProvider.themeOf(
-                context,
-              ).data.textTheme.bodyLarge?.color,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(width: 10.0),
           Text(
             "Loading models...",
-            style: TextStyle(
-              color: ThemeProvider.themeOf(
-                context,
-              ).data.textTheme.bodyLarge?.color,
-            ),
+            style: TextStyle(color: colorScheme.onSurface),
           ),
         ],
       ),
@@ -80,6 +88,7 @@ class _AIChatPageState extends State<AIChatPage> {
 
   PopupMenuEntry<String> _buildModelMenuItem(GeminiModelOption modelOption) {
     final isSelected = modelOption.id == selectedModelName;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return PopupMenuItem<String>(
       value: modelOption.id,
@@ -88,19 +97,13 @@ class _AIChatPageState extends State<AIChatPage> {
           Icon(
             isSelected ? Icons.check : Icons.auto_awesome_outlined,
             size: 18.0,
-            color: ThemeProvider.themeOf(
-              context,
-            ).data.textTheme.bodyLarge?.color,
+            color: isSelected ? colorScheme.primary : colorScheme.onSurface,
           ),
           const SizedBox(width: 10.0),
           Flexible(
             child: Text(
               modelOption.label,
-              style: TextStyle(
-                color: ThemeProvider.themeOf(
-                  context,
-                ).data.textTheme.bodyLarge?.color,
-              ),
+              style: TextStyle(color: colorScheme.onSurface),
             ),
           ),
         ],
@@ -113,18 +116,22 @@ class _AIChatPageState extends State<AIChatPage> {
     return geminiModels.map(_buildModelMenuItem).toList();
   }
 
-  Widget _buildContextTag(String label, {double maxWidth = 120.0}) {
+  Widget _buildContextTag(
+    String label, {
+    double maxWidth = 120.0,
+    bool selected = false,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       constraints: BoxConstraints(maxWidth: maxWidth),
       margin: const EdgeInsets.only(right: 8.0),
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18.0),
-        color:
-            ThemeProvider.themeOf(
-              context,
-            ).data.textTheme.bodyLarge?.color?.withAlpha(12) ??
-            Colors.grey[100],
+        color: selected
+            ? colorScheme.primaryContainer
+            : colorScheme.surfaceContainerHighest,
       ),
       child: Text(
         label,
@@ -132,7 +139,9 @@ class _AIChatPageState extends State<AIChatPage> {
         maxLines: 1,
         style: TextStyle(
           fontSize: 12.0,
-          color: ThemeProvider.themeOf(context).data.textTheme.bodyLarge?.color,
+          color: selected
+              ? colorScheme.onPrimaryContainer
+              : colorScheme.onSurfaceVariant,
         ),
       ),
     );
@@ -142,13 +151,13 @@ class _AIChatPageState extends State<AIChatPage> {
     return PopupMenuButton<String>(
       tooltip: "Select model",
       enabled: !isLoadingGeminiModels && geminiModels.isNotEmpty,
-      color: ThemeProvider.themeOf(context).data.scaffoldBackgroundColor,
+      color: Theme.of(context).colorScheme.surface,
       initialValue: hasGeminiModel(selectedModelName)
           ? selectedModelName
           : null,
       onSelected: selectGeminiModel,
       itemBuilder: (context) => buildModelMenuItems(),
-      child: _buildContextTag(selectedModelLabel),
+      child: _buildContextTag(selectedModelLabel, selected: true),
     );
   }
 
@@ -170,7 +179,7 @@ class _AIChatPageState extends State<AIChatPage> {
     "Most profound research papers published?",
     "How can I get started writing research papers?",
     "Precautions to take while reading research papers?",
-    "Where can I view the source code of OpenScholarXIV?",
+    // "Where can I view the source code of OpenScholarXIV?",
     "List the main sections of research papers?",
     "Purpose of research papers?",
   ];
@@ -188,7 +197,72 @@ class _AIChatPageState extends State<AIChatPage> {
     }
   }
 
-  void chatWithAI() async {
+  List<ChatMessage> messagesToPersist() {
+    return chatList
+        .where((message) => message.role != Role.system)
+        .map((message) => ChatMessage(message.role, message.content))
+        .toList();
+  }
+
+  Future<void> loadChatHistory() async {
+    final threads = await _chatHistoryStore.loadThreads();
+    if (!mounted) return;
+
+    setState(() {
+      chatThreads = threads;
+      isLoadingChatHistory = false;
+    });
+  }
+
+  Future<void> persistActiveThread() async {
+    final thread = activeThread;
+    if (thread == null) return;
+
+    thread.messages = messagesToPersist();
+    thread.modelName = selectedModelName;
+    thread.paperData = activePaperData;
+    await _chatHistoryStore.saveThread(thread);
+    await loadChatHistory();
+  }
+
+  Future<void> ensureActiveThread(String firstMessage) async {
+    if (activeThread != null) return;
+
+    activeThread = await _chatHistoryStore.createThread(
+      modelName: selectedModelName,
+      paperData: activePaperData,
+      title: firstMessage,
+      messages: messagesToPersist(),
+    );
+    await loadChatHistory();
+  }
+
+  Future<void> rebuildModel({List<ChatMessage> history = const []}) async {
+    if (apiKey.isEmpty) {
+      model = null;
+      return;
+    }
+
+    model = await Gemini.newModel(
+      apiKey,
+      paper: activePaperData,
+      modelName: selectedModelName,
+      history: history,
+    );
+  }
+
+  Future<void> startNewChat() async {
+    activeThread = null;
+    activePaperData = widget.paperData;
+    chatList.clear();
+    apiKeySettingsOn = apiKey.isEmpty;
+    await rebuildModel();
+
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  Future<void> chatWithAI() async {
     var message = userMessageController.text.trim();
     userMessageController.clear();
 
@@ -198,21 +272,23 @@ class _AIChatPageState extends State<AIChatPage> {
       chatList.add(ChatMessage(Role.user, message));
       chatList.add(ChatMessage(Role.system, _systemLoadingTrigger));
       scrollToTheBottom();
+      await ensureActiveThread(message);
+      await persistActiveThread();
 
       ChatMessage aiResponseObject = await currentModel.sendMessage(message);
 
-      chatList.removeLast();
+      if (chatList.isNotEmpty &&
+          chatList.last.role == Role.system &&
+          chatList.last.content == _systemLoadingTrigger) {
+        chatList.removeLast();
+      }
       setState(() {});
       chatList.add(aiResponseObject);
       setState(() {});
+      await persistActiveThread();
 
       scrollToTheBottom();
     }
-  }
-
-  void clearChat() async {
-    chatList.clear();
-    setState(() {});
   }
 
   bool hasGeminiModel(String modelName) {
@@ -245,10 +321,11 @@ class _AIChatPageState extends State<AIChatPage> {
     if (apiKey.isNotEmpty) {
       model = await Gemini.newModel(
         apiKey,
-        paper: widget.paperData,
+        paper: activePaperData,
         modelName: selectedModelName,
+        history: messagesToPersist(),
       );
-      chatList.clear();
+      await persistActiveThread();
     }
 
     if (!mounted) return;
@@ -270,11 +347,14 @@ class _AIChatPageState extends State<AIChatPage> {
       }
 
       geminiModels = await Gemini.listModels(apiKey);
-      selectedModelName = resolveSelectedModelName(savedModelName);
+      selectedModelName = resolveSelectedModelName(
+        activeThread?.modelName ?? savedModelName,
+      );
       model = await Gemini.newModel(
         apiKey,
-        paper: widget.paperData,
+        paper: activePaperData,
         modelName: selectedModelName,
+        history: messagesToPersist(),
       );
       apiKeySettingsOn = false;
     } else {
@@ -295,14 +375,6 @@ class _AIChatPageState extends State<AIChatPage> {
     setState(() {});
   }
 
-  void toggleTools() async {
-    toolsOn = !toolsOn;
-    Box toolsBox = await Hive.openBox("toolsBox");
-    await toolsBox.put("toolsBox", toolsOn);
-    await Hive.close();
-    setState(() {});
-  }
-
   void getToggleTools() async {
     Box toolsBox = await Hive.openBox("toolsBox");
     toolsOn = await toolsBox.get("toolsBox") ?? true;
@@ -310,29 +382,311 @@ class _AIChatPageState extends State<AIChatPage> {
     setState(() {});
   }
 
+  String chatThreadSubtitle(ChatThread thread) {
+    return firstUserMessagePreview(thread);
+  }
+
+  String firstUserMessagePreview(ChatThread thread) {
+    for (final message in thread.messages) {
+      if (message.role != Role.user) continue;
+
+      var content = message.content.trim().replaceAll(RegExp(r"\s+"), " ");
+      if (content.startsWith("SYMMDX")) {
+        content = content.substring(6).trim();
+      }
+      if (content.isNotEmpty) {
+        return content.length > 70
+            ? "${content.substring(0, 67).trimRight()}..."
+            : content;
+      }
+    }
+    return "";
+  }
+
+  String formatThreadDate(DateTime date) {
+    final now = DateTime.now();
+    final sameDay =
+        now.year == date.year && now.month == date.month && now.day == date.day;
+    if (sameDay) {
+      return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    }
+
+    if (now.year == date.year) {
+      return "${date.month}/${date.day}";
+    }
+
+    return "${date.year}/${date.month}/${date.day}";
+  }
+
+  Future<void> selectChatThread(ChatThread thread) async {
+    activeThread = thread;
+    activePaperData = thread.paperData;
+    chatList = thread.messages
+        .map((message) => ChatMessage(message.role, message.content))
+        .toList();
+    selectedModelName = resolveSelectedModelName(thread.modelName);
+    apiKeySettingsOn = apiKey.isEmpty;
+    await rebuildModel(history: messagesToPersist());
+
+    if (!mounted) return;
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) => scrollToTheBottom());
+  }
+
+  void startRenamingChatThread(ChatThread thread) {
+    setState(() {
+      renamingThreadId = thread.id;
+      renameDraft = thread.title;
+    });
+  }
+
+  void cancelRenamingChatThread() {
+    setState(() {
+      renamingThreadId = null;
+      renameDraft = "";
+    });
+  }
+
+  Future<void> saveRenamedChatThread(ChatThread thread) async {
+    final title = renameDraft;
+    setState(() {
+      renamingThreadId = null;
+      renameDraft = "";
+    });
+
+    await _chatHistoryStore.renameThread(thread, title);
+    if (activeThread?.id == thread.id) {
+      activeThread?.title = thread.title;
+    }
+    await loadChatHistory();
+  }
+
+  Future<void> confirmDeleteChatThread(ChatThread thread) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete chat?"),
+        content: Text(
+          "This will permanently delete \"${thread.title}\" from this device.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    await _chatHistoryStore.deleteThread(thread.id);
+    if (activeThread?.id == thread.id) {
+      await startNewChat();
+    }
+    await loadChatHistory();
+  }
+
+  void runAfterClosingDrawer(Future<void> Function() action) {
+    Navigator.pop(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
+      await action();
+    });
+  }
+
+  Widget buildChatHistoryDrawer() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 10.0, 8.0, 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Chats",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: "New chat",
+                    onPressed: () {
+                      Navigator.pop(context);
+                      startNewChat();
+                    },
+                    icon: const Icon(Icons.add_comment_outlined),
+                  ),
+                ],
+              ),
+            ),
+            Divider(color: colorScheme.outlineVariant, height: 1.0),
+            Expanded(
+              child: isLoadingChatHistory
+                  ? const Center(child: CircularProgressIndicator())
+                  : chatThreads.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No saved chats yet",
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: chatThreads.length,
+                      itemBuilder: (context, index) {
+                        final thread = chatThreads[index];
+                        final isSelected = activeThread?.id == thread.id;
+                        final isRenaming = renamingThreadId == thread.id;
+
+                        return ListTile(
+                          selected: isSelected,
+                          selectedTileColor: colorScheme.primaryContainer,
+                          leading: Icon(
+                            thread.paperData == null
+                                ? Icons.auto_awesome_outlined
+                                : Icons.description_outlined,
+                            color: isSelected
+                                ? colorScheme.onPrimaryContainer
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                          title: isRenaming
+                              ? TextFormField(
+                                  key: ValueKey("rename_${thread.id}"),
+                                  initialValue: renameDraft,
+                                  autofocus: true,
+                                  maxLines: 1,
+                                  textInputAction: TextInputAction.done,
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    border: InputBorder.none,
+                                  ),
+                                  onChanged: (value) {
+                                    renameDraft = value;
+                                  },
+                                  onFieldSubmitted: (_) {
+                                    saveRenamedChatThread(thread);
+                                  },
+                                )
+                              : Text(
+                                  thread.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                          subtitle: Text(
+                            chatThreadSubtitle(thread),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: isRenaming
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: "Save",
+                                      onPressed: () {
+                                        saveRenamedChatThread(thread);
+                                      },
+                                      icon: const Icon(Icons.check),
+                                    ),
+                                    IconButton(
+                                      tooltip: "Cancel",
+                                      onPressed: cancelRenamingChatThread,
+                                      icon: const Icon(Icons.close),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      formatThreadDate(thread.updatedAt),
+                                      style: TextStyle(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 12.0,
+                                      ),
+                                    ),
+                                    PopupMenuButton<_ChatThreadMenuAction>(
+                                      tooltip: "Chat options",
+                                      onSelected: (action) {
+                                        if (action ==
+                                            _ChatThreadMenuAction.rename) {
+                                          startRenamingChatThread(thread);
+                                        } else {
+                                          runAfterClosingDrawer(
+                                            () =>
+                                                confirmDeleteChatThread(thread),
+                                          );
+                                        }
+                                      },
+                                      itemBuilder: (context) => const [
+                                        PopupMenuItem(
+                                          value: _ChatThreadMenuAction.rename,
+                                          child: Text("Rename"),
+                                        ),
+                                        PopupMenuItem(
+                                          value: _ChatThreadMenuAction.delete,
+                                          child: Text("Delete"),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                          onTap: () {
+                            if (isRenaming) return;
+                            Navigator.pop(context);
+                            selectChatThread(thread);
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
+    activePaperData = widget.paperData;
+    loadChatHistory();
     getToggleTools();
     configModel();
   }
 
   @override
+  void dispose() {
+    userMessageController.dispose();
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
+      key: _scaffoldKey,
+      endDrawer: buildChatHistoryDrawer(),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: Navigator.of(context).canPop() ? const BackButton() : null,
         title: const Text(
           "OpenScholarXIV",
           // style: TextStyle(fontSize: 15.0),
         ),
         actions: [
-          // TOGGLE TOOLS
-          IconButton(
-            onPressed: () {
-              toggleTools();
-            },
-            icon: const Icon(Icons.menu_open_rounded),
-          ),
           // API KEY SETTINGS
           IconButton(
             onPressed: () {
@@ -341,12 +695,19 @@ class _AIChatPageState extends State<AIChatPage> {
             icon: const Icon(Ionicons.key_outline),
           ),
 
-          // CLEAR CHAT
+          // NEW CHAT
           IconButton(
             onPressed: () {
-              clearChat();
+              startNewChat();
             },
-            icon: const Icon(Icons.delete_forever_outlined),
+            icon: const Icon(Icons.add_comment_outlined),
+          ),
+          // CHAT HISTORY
+          IconButton(
+            onPressed: () {
+              _scaffoldKey.currentState?.openEndDrawer();
+            },
+            icon: const Icon(Icons.history_outlined),
           ),
           const SizedBox(width: 5.0),
         ],
@@ -368,9 +729,7 @@ class _AIChatPageState extends State<AIChatPage> {
                             child: Icon(
                               Icons.auto_awesome_outlined,
                               size: 30.0,
-                              color: ThemeProvider.themeOf(
-                                context,
-                              ).data.textTheme.bodyLarge?.color,
+                              color: colorScheme.primary,
                             ),
                           ),
                           Container(
@@ -378,7 +737,9 @@ class _AIChatPageState extends State<AIChatPage> {
                               horizontal: 50.0,
                             ),
                             child: Text(
-                              "This AI conversation is powered by $selectedModelLabel. You can have conversations about the current paper here.",
+                              activePaperData == null
+                                  ? "This AI conversation is powered by $selectedModelLabel."
+                                  : "This AI conversation is powered by $selectedModelLabel. You can have conversations about the current paper here.",
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -387,7 +748,7 @@ class _AIChatPageState extends State<AIChatPage> {
                               : PromptSuggestions(
                                   chatWithAI: chatWithAI,
                                   userMessageController: userMessageController,
-                                  promptSuggestions: widget.paperData == null
+                                  promptSuggestions: activePaperData == null
                                       ? generalPromptSuggestions
                                       : paperPromptSuggestions,
                                 ),
@@ -418,8 +779,9 @@ class _AIChatPageState extends State<AIChatPage> {
                       if (hasPaperTitle)
                         Expanded(
                           child: _buildContextTag(
-                            widget.paperData!.title,
+                            activePaperData!.title,
                             maxWidth: double.infinity,
+                            selected: true,
                           ),
                         ),
                     ],
@@ -432,36 +794,20 @@ class _AIChatPageState extends State<AIChatPage> {
                         padding: const EdgeInsets.only(left: 18.0, right: 18.0),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30.0),
-                          color:
-                              ThemeProvider.themeOf(context)
-                                  .data
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.color
-                                  ?.withAlpha(12) ??
-                              Colors.grey[100],
+                          color: subtleSurfaceColor(colorScheme),
                         ),
                         child: TextField(
                           controller: userMessageController,
                           enabled: !(apiKeySettingsOn == true),
-                          cursorColor:
-                              ThemeProvider.themeOf(context).id == "dark_theme"
-                              ? Colors.white
-                              : ThemeProvider.themeOf(
-                                  context,
-                                ).data.textTheme.bodyLarge?.color,
-                          style: TextStyle(
-                            color:
-                                ThemeProvider.themeOf(context).id ==
-                                    "dark_theme"
-                                ? Colors.white
-                                : Colors.black,
-                          ),
+                          cursorColor: colorScheme.primary,
+                          style: TextStyle(color: colorScheme.onSurface),
                           decoration: InputDecoration(
-                            hintText: widget.paperData.toString() == ""
+                            hintText: activePaperData == null
                                 ? "ask about anything..."
                                 : 'ask about the paper...',
-                            hintStyle: TextStyle(color: Colors.grey[700]),
+                            hintStyle: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                             border: InputBorder.none,
                           ),
                         ),
@@ -475,9 +821,9 @@ class _AIChatPageState extends State<AIChatPage> {
                             : chatWithAI,
                         icon: Icon(
                           Ionicons.paper_plane_outline,
-                          color: ThemeProvider.themeOf(
-                            context,
-                          ).data.textTheme.bodyLarge?.color,
+                          color: apiKey.isEmpty || model == null
+                              ? colorScheme.onSurface.withAlpha(64)
+                              : colorScheme.primary,
                         ),
                       ),
                     ),

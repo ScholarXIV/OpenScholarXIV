@@ -10,7 +10,6 @@ import 'package:hive/hive.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:theme_provider/theme_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EachChatMessage extends StatefulWidget {
@@ -32,11 +31,17 @@ class _EachChatMessageState extends State<EachChatMessage> {
   var speedRate = 0.5;
   var speedFactor = 0.1;
   var isSpeaking = false;
+  var toolsRevealed = false;
 
   final _markdownPrefix = "SYMMDX";
 
+  bool get showTools {
+    return widget.response.role == Role.ai &&
+        (widget.toolsOn == true || toolsRevealed);
+  }
+
   bool isMarkdown(String content) {
-    return content.substring(0, 6) == _markdownPrefix;
+    return content.startsWith(_markdownPrefix);
   }
 
   void readResponse() async {
@@ -77,6 +82,14 @@ class _EachChatMessageState extends State<EachChatMessage> {
     await Clipboard.setData(ClipboardData(text: message));
   }
 
+  void revealTools() {
+    if (widget.response.role != Role.ai || toolsRevealed) return;
+
+    setState(() {
+      toolsRevealed = true;
+    });
+  }
+
   void getSpeedRate() async {
     final box = await Hive.openBox("speedRateBox");
     speedRate = await box.get("speedRate") ?? 0.5;
@@ -96,6 +109,8 @@ class _EachChatMessageState extends State<EachChatMessage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       mainAxisAlignment: widget.response.role == Role.user
           ? MainAxisAlignment.end
@@ -113,143 +128,134 @@ class _EachChatMessageState extends State<EachChatMessage> {
                         padding: const EdgeInsets.only(top: 6.0, left: 10.0),
                         child: Icon(
                           Icons.auto_awesome_outlined,
-                          color: ThemeProvider.themeOf(
-                            context,
-                          ).data.textTheme.bodyLarge?.color,
+                          color: colorScheme.primary,
                         ),
                       )
                     : Container(),
-                Container(
-                  constraints: BoxConstraints(
-                    minWidth: 50.0,
-                    maxWidth: MediaQuery.of(context).size.width * 0.75,
-                    maxHeight: 500.0,
-                  ),
-                  margin: const EdgeInsets.only(
-                    left: 8.0,
-                    right: 8.0,
-                    bottom: 6.0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ThemeProvider.themeOf(context).id == "dark_theme"
-                        ? ThemeProvider.themeOf(
-                            context,
-                          ).data.textTheme.bodyLarge?.color?.withAlpha(20)
-                        : ThemeProvider.themeOf(context)
-                                  .data
-                                  .textTheme
-                                  .bodyLarge
-                                  ?.color
-                                  ?.withAlpha(12) ??
-                              Colors.grey[100],
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: widget.response.role == Role.user
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 13.0,
-                            vertical: 10.0,
-                          ),
-                          child: Text(widget.response.content),
-                        )
-                      : widget.response.role == Role.system
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                            vertical: 3.0,
-                          ),
-                          child: LoadingAnimationWidget.prograssiveDots(
-                            color:
-                                ThemeProvider.themeOf(
-                                  context,
-                                ).data.textTheme.bodyLarge?.color ??
-                                Colors.grey[700]!,
-                            size: 30,
-                          ),
-                        )
-                      : widget.response.content.toString().substring(0, 6) ==
-                            "SYMMDX"
-                      ? Markdown(
-                          data: widget.response.content
-                              .toString()
-                              .substring(6, widget.response.content.length)
-                              .trim(),
-                          selectable: true,
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 13.0,
-                            vertical: 10.0,
-                          ),
-                          onTapLink: (text, href, title) =>
-                              launchUrl(Uri.parse(href!)),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0,
-                            vertical: 10.0,
-                          ),
-                          child: AnimatedTextKit(
-                            displayFullTextOnTap: true,
-                            isRepeatingAnimation: false,
-                            animatedTexts: [
-                              TypewriterAnimatedText(
-                                widget.response.content.toString().trim(),
-                                textStyle: TextStyle(
-                                  color:
-                                      widget.response.content
-                                              .toString()
-                                              .trim()
-                                              .startsWith(
-                                                "GenerativeAIException",
-                                              ) ||
-                                          widget.response.content
-                                              .toString()
-                                              .trim()
-                                              .startsWith("ClientException") ||
-                                          widget.response.content
-                                              .toString()
-                                              .trim()
-                                              .startsWith(
-                                                "HandshakeException",
-                                              ) ||
-                                          widget.response.content
-                                              .toString()
-                                              .trim()
-                                              .startsWith(
-                                                "API key not valid",
-                                              ) ||
-                                          widget.response.content
-                                              .toString()
-                                              .trim()
-                                              .startsWith(
-                                                "An internal error has occurred",
-                                              )
-                                      ? Colors.redAccent
-                                      : ThemeProvider.themeOf(
-                                          context,
-                                        ).data.textTheme.bodyLarge?.color,
-                                ),
-                                speed: const Duration(milliseconds: 20),
+                GestureDetector(
+                  onLongPress: revealTools,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      minWidth: 50.0,
+                      maxWidth: MediaQuery.of(context).size.width * 0.75,
+                      maxHeight: 500.0,
+                    ),
+                    margin: const EdgeInsets.only(
+                      left: 8.0,
+                      right: 8.0,
+                      bottom: 6.0,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.response.role == Role.user
+                          ? colorScheme.primaryContainer
+                          : colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: widget.response.role == Role.user
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 13.0,
+                              vertical: 10.0,
+                            ),
+                            child: Text(
+                              widget.response.content,
+                              style: TextStyle(
+                                color: colorScheme.onPrimaryContainer,
                               ),
-                            ],
+                            ),
+                          )
+                        : widget.response.role == Role.system
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 3.0,
+                            ),
+                            child: LoadingAnimationWidget.prograssiveDots(
+                              color: colorScheme.primary,
+                              size: 30,
+                            ),
+                          )
+                        : isMarkdown(widget.response.content)
+                        ? Markdown(
+                            data: widget.response.content
+                                .toString()
+                                .substring(6, widget.response.content.length)
+                                .trim(),
+                            selectable: true,
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 13.0,
+                              vertical: 10.0,
+                            ),
+                            onTapLink: (text, href, title) =>
+                                launchUrl(Uri.parse(href!)),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                              vertical: 10.0,
+                            ),
+                            child: AnimatedTextKit(
+                              displayFullTextOnTap: true,
+                              isRepeatingAnimation: false,
+                              animatedTexts: [
+                                TypewriterAnimatedText(
+                                  widget.response.content.toString().trim(),
+                                  textStyle: TextStyle(
+                                    color:
+                                        widget.response.content
+                                                .toString()
+                                                .trim()
+                                                .startsWith(
+                                                  "GenerativeAIException",
+                                                ) ||
+                                            widget.response.content
+                                                .toString()
+                                                .trim()
+                                                .startsWith(
+                                                  "ClientException",
+                                                ) ||
+                                            widget.response.content
+                                                .toString()
+                                                .trim()
+                                                .startsWith(
+                                                  "HandshakeException",
+                                                ) ||
+                                            widget.response.content
+                                                .toString()
+                                                .trim()
+                                                .startsWith(
+                                                  "API key not valid",
+                                                ) ||
+                                            widget.response.content
+                                                .toString()
+                                                .trim()
+                                                .startsWith(
+                                                  "An internal error has occurred",
+                                                )
+                                        ? colorScheme.error
+                                        : colorScheme.onSurface,
+                                  ),
+                                  speed: const Duration(milliseconds: 20),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                  ),
                 ),
                 widget.response.role == Role.user
                     ? Padding(
                         padding: const EdgeInsets.only(top: 8.0, right: 10.0),
                         child: Icon(
                           Icons.person_outline,
-                          color: ThemeProvider.themeOf(
-                            context,
-                          ).data.textTheme.bodyLarge?.color,
+                          color: colorScheme.primary,
                         ),
                       )
                     : Container(),
               ],
             ),
             // TOOLS
-            widget.response.role == Role.ai && widget.toolsOn == true
+            showTools
                 ? Container(
                     padding: const EdgeInsets.only(left: 50.0, bottom: 14.0),
                     child: Row(
@@ -265,15 +271,10 @@ class _EachChatMessageState extends State<EachChatMessage> {
                               vertical: 4.0,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  ThemeProvider.themeOf(context)
-                                      .data
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.color
-                                      ?.withAlpha(12) ??
-                                  Colors.grey[100],
-                              border: Border.all(color: Colors.grey[500]!),
+                              color: colorScheme.surfaceContainerHighest,
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             child: Row(
@@ -281,9 +282,7 @@ class _EachChatMessageState extends State<EachChatMessage> {
                                 Icon(
                                   Ionicons.volume_high_outline,
                                   size: 18.0,
-                                  color: ThemeProvider.themeOf(
-                                    context,
-                                  ).data.textTheme.bodyLarge?.color,
+                                  color: colorScheme.primary,
                                 ),
                                 const SizedBox(width: 5.0),
                                 const Text("Speak"),
@@ -302,15 +301,10 @@ class _EachChatMessageState extends State<EachChatMessage> {
                               vertical: 4.0,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  ThemeProvider.themeOf(context)
-                                      .data
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.color
-                                      ?.withAlpha(12) ??
-                                  Colors.grey[100],
-                              border: Border.all(color: Colors.grey[500]!),
+                              color: colorScheme.surfaceContainerHighest,
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             child: Row(
@@ -318,9 +312,7 @@ class _EachChatMessageState extends State<EachChatMessage> {
                                 Icon(
                                   Ionicons.copy_outline,
                                   size: 18.0,
-                                  color: ThemeProvider.themeOf(
-                                    context,
-                                  ).data.textTheme.bodyLarge?.color,
+                                  color: colorScheme.primary,
                                 ),
                                 const SizedBox(width: 5.0),
                                 const Text("Copy"),
@@ -337,15 +329,10 @@ class _EachChatMessageState extends State<EachChatMessage> {
                               vertical: 4.0,
                             ),
                             decoration: BoxDecoration(
-                              color:
-                                  ThemeProvider.themeOf(context)
-                                      .data
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.color
-                                      ?.withAlpha(12) ??
-                                  Colors.grey[100],
-                              border: Border.all(color: Colors.grey[500]!),
+                              color: colorScheme.surfaceContainerHighest,
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                              ),
                               borderRadius: BorderRadius.circular(10.0),
                             ),
                             child: Row(
@@ -353,9 +340,7 @@ class _EachChatMessageState extends State<EachChatMessage> {
                                 Icon(
                                   Ionicons.share_outline,
                                   size: 18.0,
-                                  color: ThemeProvider.themeOf(
-                                    context,
-                                  ).data.textTheme.bodyLarge?.color,
+                                  color: colorScheme.primary,
                                 ),
                                 const SizedBox(width: 5.0),
                                 const Text("Share"),

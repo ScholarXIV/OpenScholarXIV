@@ -6,7 +6,6 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 
 import 'package:hive/hive.dart';
-import 'package:theme_provider/theme_provider.dart';
 
 class FullScreenSummaryPage extends StatefulWidget {
   const FullScreenSummaryPage({
@@ -94,6 +93,8 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
   @override
   Widget build(BuildContext context) {
     String summary = widget.paperData.summary;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Summary"),
@@ -113,13 +114,7 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                           },
                           icon: Icon(
                             Icons.remove,
-                            color:
-                                ThemeProvider.themeOf(context).id ==
-                                    "mixed_theme"
-                                ? Colors.grey[200]
-                                : ThemeProvider.themeOf(
-                                    context,
-                                  ).data.textTheme.bodyLarge?.color,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         GestureDetector(
@@ -129,13 +124,7 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                           child: Text(
                             speedRate.toStringAsFixed(1).toString(),
                             style: TextStyle(
-                              color:
-                                  ThemeProvider.themeOf(context).id ==
-                                      "mixed_theme"
-                                  ? Colors.grey[200]
-                                  : ThemeProvider.themeOf(
-                                      context,
-                                    ).data.textTheme.bodyLarge?.color,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -187,9 +176,7 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                     child: TeXViewDocument(
                       summary,
                       style: TeXViewStyle(
-                        contentColor: ThemeProvider.themeOf(
-                          context,
-                        ).data.textTheme.bodyLarge?.color,
+                        contentColor: colorScheme.onSurface,
                         textAlign: TeXViewTextAlign.left,
                         fontStyle: TeXViewFontStyle(
                           fontSize: 17,

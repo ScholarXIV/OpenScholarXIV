@@ -50,54 +50,50 @@ class _BookmarksPageState extends State<BookmarksPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Bookmarks",
-        ),
+        title: const Text("Bookmarks"),
         actions: [
           IconButton(
             onPressed: () {
               clearBookmarks();
             },
-            icon: const Icon(
-              Icons.delete_forever_outlined,
-            ),
+            icon: const Icon(Icons.delete_forever_outlined),
           ),
         ],
       ),
       body: isLoading == true
-          ? const LoadingIndicator(
-              topPadding: 50.0,
-            )
+          ? const LoadingIndicator(topPadding: 50.0)
           : bookmarks.isNotEmpty
-              ? LiquidPullToRefresh(
-                  onRefresh: getBookmarks,
-                  backgroundColor: Colors.white,
-                  color: const Color(0xff121212),
-                  animSpeedFactor: 2.0,
-                  child: ListView(
-                    children: bookmarks
-                        .map(
-                          (eachPaper) => EachPaperCard(
-                            eachPaper: eachPaper,
-                            downloadPaper: widget.downloadPaper,
-                            parseAndLaunchURL: widget.parseAndLaunchURL,
-                            isBookmarked: true,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                )
-              : Center(
-                  child: Text(
-                    "No Bookmarks Yet!",
-                    style: TextStyle(
-                      color: Colors.grey[600]!,
-                      fontSize: 16.0,
-                    ),
-                  ),
+          ? LiquidPullToRefresh(
+              onRefresh: getBookmarks,
+              backgroundColor: colorScheme.surface,
+              color: colorScheme.primary,
+              animSpeedFactor: 2.0,
+              child: ListView(
+                children: bookmarks
+                    .map(
+                      (eachPaper) => EachPaperCard(
+                        eachPaper: eachPaper,
+                        downloadPaper: widget.downloadPaper,
+                        parseAndLaunchURL: widget.parseAndLaunchURL,
+                        isBookmarked: true,
+                      ),
+                    )
+                    .toList(),
+              ),
+            )
+          : Center(
+              child: Text(
+                "No Bookmarks Yet!",
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 16.0,
                 ),
+              ),
+            ),
     );
   }
 }

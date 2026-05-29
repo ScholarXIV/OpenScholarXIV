@@ -20,6 +20,8 @@ class IDAndDate extends StatefulWidget {
 class _IDAndDateState extends State<IDAndDate> {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.only(bottom: 2.0, right: 5.0),
       child: Wrap(
@@ -27,11 +29,20 @@ class _IDAndDateState extends State<IDAndDate> {
         runSpacing: 2.0,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Text("ID: ${widget.id}", style: const TextStyle(fontSize: 12.0)),
+          Text(
+            "ID: ${widget.id}",
+            style: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 12.0,
+            ),
+          ),
           if (widget.primaryCategory.isNotEmpty)
             Text(
               "Category: ${widget.primaryCategory}",
-              style: const TextStyle(fontSize: 12.0),
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 12.0,
+              ),
             ),
         ],
       ),

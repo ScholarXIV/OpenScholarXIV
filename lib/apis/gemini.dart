@@ -49,7 +49,12 @@ class Gemini {
   late final GenerativeModel _model;
   late final ChatSession _chatSession;
 
-  Gemini._internal(String apiKey, String systemPrompt, String modelName) {
+  Gemini._internal(
+    String apiKey,
+    String systemPrompt,
+    String modelName, {
+    List<ChatMessage> history = const [],
+  }) {
     _model = GenerativeModel(
       apiKey: apiKey,
       model: modelName,
@@ -63,18 +68,38 @@ class Gemini {
       ),
     );
 
-    _chatSession = _model.startChat();
+    _chatSession = _model.startChat(history: _contentHistoryFor(history));
   }
 
   static Future<Gemini> newModel(
     String apiKey, {
     Paper? paper,
     String modelName = defaultModelName,
+    List<ChatMessage> history = const [],
   }) async {
     final systemPrompt = paper != null
         ? await _getModelSystemMessage(paper)
         : await _getGeneralSystemMessage();
-    return Gemini._internal(apiKey, systemPrompt, modelName);
+    return Gemini._internal(apiKey, systemPrompt, modelName, history: history);
+  }
+
+  static List<Content> _contentHistoryFor(List<ChatMessage> messages) {
+    final history = <Content>[];
+
+    for (final message in messages) {
+      final content = message.content.trim();
+      if (content.isEmpty || message.role == Role.system) {
+        continue;
+      }
+
+      if (message.role == Role.user) {
+        history.add(Content.text(content));
+      } else {
+        history.add(Content.model([TextPart(content)]));
+      }
+    }
+
+    return history;
   }
 
   static bool _isTextChatModel(Map<String, dynamic> rawModel) {

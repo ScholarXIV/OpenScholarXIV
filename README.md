@@ -16,7 +16,7 @@ OpenScholarXIV is a free and open-source app for finding, reading, bookmarking, 
 - Read and listen to paper summaries.
 - Deep dive into papers with AI chat.
 - Bring your own Gemini API key.
-- Choose between light, dark, and mixed themes.
+- Choose between Material You light and dark themes.
 - Download and share papers.
 
 ## Screens

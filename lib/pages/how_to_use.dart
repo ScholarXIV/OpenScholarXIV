@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:theme_provider/theme_provider.dart';
 import 'package:photo_view/photo_view.dart';
 
 class HowToUsePage extends StatelessWidget {
@@ -7,8 +6,6 @@ class HowToUsePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkTheme = ThemeProvider.themeOf(context).id == "dark_theme";
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('How to Use'),
@@ -24,56 +21,48 @@ class HowToUsePage extends StatelessWidget {
             'OpenScholarXIV',
             'assets/banners/OpenScholarXIV7.png',
             'Completely Free & Open-Source App to browse and explore research papers with AI-powered chat and more features.',
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'Search and Explore Papers',
             'assets/banners/OpenScholarXIV.png',
             'Use the search bar at the top to find research papers or just brwose the suggested list of papers to discover new research.',
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'Read Papers In-app',
             'assets/banners/OpenScholarXIV6.png',
             'Read any paper directly in the app for a seamless and distraction free experience.',
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'Bookmark Papers',
             'assets/banners/OpenScholarXIV8.png',
             'Bookmark papers to read later by tapping the bookmark icon on any paper.',
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'View and Listen to Summaries',
             'assets/banners/OpenScholarXIV2.png',
             'Tap the summary button on any paper to view its summary and click on the volume icon to listen to it. You can also adjust the speed of the audio.',
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'AI Chat',
             'assets/banners/OpenScholarXIV3.png',
             'Discuss papers with AI by tapping the AI icon or click on the AI icon on the app bar to have a general conversation.',
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'API configuration',
             'assets/banners/OpenScholarXIV4.png',
             "You can grab your own Gemini API key in the settings page to enable AI chat. Click on the 'GET API KEY' button to get your key.",
-            isDarkTheme,
             context,
           ),
           _buildSection(
             'Change Theme',
             'assets/banners/OpenScholarXIV5.png',
-            'Toggle between light, dark and mixed themes using the theme icon in the app bar.',
-            isDarkTheme,
+            'Toggle between Material You light and dark themes using the theme icon in the app bar.',
             context,
           ),
           const SizedBox(height: 50),
@@ -86,13 +75,14 @@ class HowToUsePage extends StatelessWidget {
     String title,
     String imagePath,
     String description,
-    bool isDarkTheme,
     BuildContext context,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: isDarkTheme ? Colors.grey[900] : Colors.grey[100],
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -121,7 +111,7 @@ class HowToUsePage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDarkTheme ? Colors.white : Colors.black,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -129,7 +119,7 @@ class HowToUsePage extends StatelessWidget {
                   description,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDarkTheme ? Colors.grey[300] : Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

@@ -1,7 +1,19 @@
+import 'package:arxiv/apis/arxiv.dart';
 import 'package:arxiv/models/paper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('Arxiv.queryUriFor builds an encoded HTTPS query', () {
+    final uri = Arxiv.queryUriFor('machine learning', page: 30, pageSize: 10);
+
+    expect(uri.scheme, 'https');
+    expect(uri.host, 'export.arxiv.org');
+    expect(uri.path, '/api/query');
+    expect(uri.queryParameters['search_query'], 'all:machine learning');
+    expect(uri.queryParameters['start'], '30');
+    expect(uri.queryParameters['max_results'], '10');
+  });
+
   test('Paper.fromJson retains arXiv entry metadata', () {
     final paper = Paper.fromJson(
       {

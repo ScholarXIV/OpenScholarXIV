@@ -6,7 +6,6 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 import 'package:hive/hive.dart';
 import 'package:ionicons/ionicons.dart';
-import 'package:theme_provider/theme_provider.dart';
 
 class SummaryBottomSheet extends StatefulWidget {
   const SummaryBottomSheet({
@@ -91,11 +90,13 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
   @override
   Widget build(BuildContext context) {
     String summary = widget.paperData.summary;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(
-          color: ThemeProvider.themeOf(context).data.textTheme.bodyLarge?.color,
+          color: colorScheme.outlineVariant,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20.0),
             topRight: Radius.circular(20.0),
@@ -105,7 +106,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
           margin: const EdgeInsets.only(top: 1.0),
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
-            color: ThemeProvider.themeOf(context).data.scaffoldBackgroundColor,
+            color: colorScheme.surface,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20.0),
               topRight: Radius.circular(20.0),
@@ -119,9 +120,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                 clipBehavior: Clip.hardEdge,
                 margin: const EdgeInsets.all(2.0),
                 decoration: BoxDecoration(
-                  color: ThemeProvider.themeOf(context).id == "mixed_theme"
-                      ? const Color(0xff121212)
-                      : Colors.transparent,
+                  color: colorScheme.surfaceContainerHigh,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20.0),
                     topRight: Radius.circular(20.0),
@@ -138,12 +137,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                         style: TextStyle(
                           fontSize: 20.0,
                           fontWeight: FontWeight.bold,
-                          color:
-                              ThemeProvider.themeOf(context).id == "mixed_theme"
-                              ? Colors.white
-                              : ThemeProvider.themeOf(
-                                  context,
-                                ).data.textTheme.bodyLarge?.color,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Row(
@@ -161,13 +155,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                                       },
                                       icon: Icon(
                                         Icons.remove,
-                                        color:
-                                            ThemeProvider.themeOf(context).id ==
-                                                "mixed_theme"
-                                            ? Colors.grey[200]
-                                            : ThemeProvider.themeOf(
-                                                context,
-                                              ).data.textTheme.bodyLarge?.color,
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                     GestureDetector(
@@ -177,17 +165,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                                       child: Text(
                                         speedRate.toStringAsFixed(1).toString(),
                                         style: TextStyle(
-                                          color:
-                                              ThemeProvider.themeOf(
-                                                    context,
-                                                  ).id ==
-                                                  "mixed_theme"
-                                              ? Colors.grey[200]
-                                              : ThemeProvider.themeOf(context)
-                                                    .data
-                                                    .textTheme
-                                                    .bodyLarge
-                                                    ?.color,
+                                          color: colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ),
@@ -210,7 +188,6 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                               isSpeaking == true
                                   ? Ionicons.stop_outline
                                   : Ionicons.volume_high_outline,
-                              // color: Colors.white,
                             ),
                           ),
                           Padding(
@@ -264,9 +241,7 @@ class _SummaryBottomSheetState extends State<SummaryBottomSheet> {
                               child: TeXViewDocument(
                                 summary,
                                 style: TeXViewStyle(
-                                  contentColor: ThemeProvider.themeOf(
-                                    context,
-                                  ).data.textTheme.bodyLarge?.color,
+                                  contentColor: colorScheme.onSurface,
                                   textAlign: TeXViewTextAlign.left,
                                   fontStyle: TeXViewFontStyle(
                                     fontSize: 15,

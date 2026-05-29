@@ -1,7 +1,6 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
-import 'package:theme_provider/theme_provider.dart';
 
 class PromptSuggestions extends StatefulWidget {
   const PromptSuggestions({
@@ -22,6 +21,8 @@ class PromptSuggestions extends StatefulWidget {
 class _PromptSuggestionsState extends State<PromptSuggestions> {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.only(top: 20.0),
       child: Column(
@@ -40,24 +41,15 @@ class _PromptSuggestionsState extends State<PromptSuggestions> {
                       right: 20.0,
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14.0, vertical: 10.0),
+                      horizontal: 14.0,
+                      vertical: 10.0,
+                    ),
                     decoration: BoxDecoration(
-                      color: ThemeProvider.themeOf(context)
-                              .data
-                              .textTheme
-                              .bodyLarge
-                              ?.color
-                              ?.withAlpha(12) ??
-                          Colors.grey[100],
-                      border: Border.all(
-                        color: Colors.grey[200]!,
-                      ),
+                      color: colorScheme.surfaceContainerHighest,
+                      border: Border.all(color: colorScheme.outlineVariant),
                       borderRadius: BorderRadius.circular(10.0),
                     ),
-                    child: Text(
-                      suggestion,
-                      textAlign: TextAlign.center,
-                    ),
+                    child: Text(suggestion, textAlign: TextAlign.center),
                   ),
                 ),
               ),

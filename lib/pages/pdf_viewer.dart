@@ -27,28 +27,18 @@ class _PDFViewerState extends State<PDFViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text(
-          widget.paperTitle,
-          style: const TextStyle(
-            fontSize: 16.0,
-          ),
-        ),
+        title: Text(widget.paperTitle, style: const TextStyle(fontSize: 16.0)),
         actions: [
           IconButton(
             onPressed: () => {widget.downloadPaper(widget.pdfURL)},
-            icon: const Icon(
-              Icons.downloading_outlined,
-            ),
+            icon: const Icon(Icons.downloading_outlined),
           ),
         ],
       ),
       body: widget.urlType == 1
-          ? SfPdfViewer.network(
-              widget.pdfURL,
-              enableTextSelection: true,
-            )
+          ? SfPdfViewer.network(widget.pdfURL, enableTextSelection: true)
           : PDFView(
               filePath: widget.savePath,
               autoSpacing: false,

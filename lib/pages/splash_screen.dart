@@ -14,12 +14,15 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return FlutterSplashScreen.fadeIn(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      animationDuration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 3000),
       childWidget: SizedBox(
         height: 150.0,
         width: 150.0,
         child: Lottie.asset(
           "assets/animation/OpenScholarXIVLoader.json",
+          repeat: true,
         ),
       ),
       nextScreen: const HomePage(),

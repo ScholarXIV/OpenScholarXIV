@@ -5,12 +5,12 @@ import 'package:arxiv/components/id_and_date.dart';
 import 'package:arxiv/components/summary_bottom_sheet.dart';
 import 'package:arxiv/models/paper.dart';
 import 'package:arxiv/pages/ai_chat_page.dart';
+import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 import 'package:hive/hive.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:theme_provider/theme_provider.dart';
 
 class EachPaperCard extends StatefulWidget {
   const EachPaperCard({
@@ -93,7 +93,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
         builder: (context, scrollController) => Container(
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
-            color: ThemeProvider.themeOf(context).data.scaffoldBackgroundColor,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20.0),
               topRight: Radius.circular(20.0),
@@ -105,9 +105,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
               Text(
                 "arXiv Metadata",
                 style: TextStyle(
-                  color: ThemeProvider.themeOf(
-                    context,
-                  ).data.textTheme.bodyLarge?.color,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
                 ),
@@ -119,9 +117,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
                   child: SelectableText(
                     metadata,
                     style: TextStyle(
-                      color: ThemeProvider.themeOf(
-                        context,
-                      ).data.textTheme.bodyLarge?.color,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontFamily: "monospace",
                       fontSize: 12.0,
                     ),
@@ -181,6 +177,8 @@ class _EachPaperCardState extends State<EachPaperCard> {
   @override
   Widget build(BuildContext context) {
     String title = widget.eachPaper.title;
+    final colorScheme = Theme.of(context).colorScheme;
+    final cardColor = subtleSurfaceColor(colorScheme);
 
     return Container(
       margin: const EdgeInsets.only(
@@ -196,11 +194,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
         bottom: 6.0,
       ),
       decoration: BoxDecoration(
-        color:
-            ThemeProvider.themeOf(
-              context,
-            ).data.textTheme.bodyLarge?.color?.withAlpha(12) ??
-            Colors.grey[100],
+        color: cardColor,
         borderRadius: BorderRadius.circular(10.0),
       ),
       child: Column(
@@ -224,9 +218,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
                       child: TeXViewDocument(
                         title,
                         style: TeXViewStyle(
-                          contentColor: ThemeProvider.themeOf(
-                            context,
-                          ).data.textTheme.bodyLarge?.color,
+                          contentColor: colorScheme.onSurface,
                           textAlign: TeXViewTextAlign.left,
                           fontStyle: TeXViewFontStyle(
                             fontSize: 16,
@@ -276,35 +268,14 @@ class _EachPaperCardState extends State<EachPaperCard> {
                       vertical: 8.0,
                     ),
                     decoration: BoxDecoration(
-                      color:
-                          ThemeProvider.themeOf(context).id.toString() ==
-                              "mixed_theme"
-                          ? const Color(0xff121212)
-                          : Colors.transparent,
-                      border: Border.all(
-                        color:
-                            ThemeProvider.themeOf(context).id.toString() ==
-                                "mixed_theme"
-                            ? const Color(0xff121212)
-                            : ThemeProvider.themeOf(
-                                    context,
-                                  ).data.textTheme.bodyLarge!.color ??
-                                  Colors.black,
-                      ),
+                      color: colorScheme.primaryContainer,
+                      border: Border.all(color: colorScheme.primaryContainer),
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
                       "Summary",
                       style: TextStyle(
-                        color:
-                            ThemeProvider.themeOf(context).id.toString() ==
-                                "mixed_theme"
-                            ? ThemeProvider.themeOf(
-                                context,
-                              ).data.scaffoldBackgroundColor
-                            : ThemeProvider.themeOf(
-                                context,
-                              ).data.textTheme.bodyLarge?.color,
+                        color: colorScheme.onPrimaryContainer,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -320,9 +291,9 @@ class _EachPaperCardState extends State<EachPaperCard> {
                   isBookmarked == false
                       ? Icons.bookmark_border
                       : Icons.bookmark,
-                  color: ThemeProvider.themeOf(
-                    context,
-                  ).data.textTheme.bodyLarge?.color,
+                  color: isBookmarked
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
                 ),
               ),
               IconButton(
@@ -331,9 +302,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
                 },
                 icon: Icon(
                   Ionicons.share_outline,
-                  color: ThemeProvider.themeOf(
-                    context,
-                  ).data.textTheme.bodyLarge?.color,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               IconButton(
@@ -342,20 +311,9 @@ class _EachPaperCardState extends State<EachPaperCard> {
                 },
                 icon: Icon(
                   Icons.downloading_outlined,
-                  color: ThemeProvider.themeOf(
-                    context,
-                  ).data.textTheme.bodyLarge?.color,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              // IconButton(
-              //   onPressed: showMetadata,
-              //   icon: Icon(
-              //     Icons.info_outline,
-              //     color: ThemeProvider.themeOf(
-              //       context,
-              //     ).data.textTheme.bodyLarge?.color,
-              //   ),
-              // ),
               IconButton(
                 onPressed: () {
                   Navigator.push(
@@ -368,9 +326,7 @@ class _EachPaperCardState extends State<EachPaperCard> {
                 },
                 icon: Icon(
                   Icons.auto_awesome_outlined,
-                  color: ThemeProvider.themeOf(
-                    context,
-                  ).data.textTheme.bodyLarge?.color,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
