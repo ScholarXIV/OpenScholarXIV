@@ -3,16 +3,17 @@ import 'package:arxiv/apis/arxiv.dart';
 import 'package:arxiv/components/each_paper_card.dart';
 import 'package:arxiv/components/paper_card_skeleton.dart';
 import 'package:arxiv/components/search_box.dart';
+import 'package:arxiv/data/arxiv_categories.dart';
 import 'package:arxiv/models/paper.dart';
 import 'package:arxiv/pages/ai_chat_page.dart';
 import 'package:arxiv/pages/bookmarks_page.dart';
+import 'package:arxiv/pages/paper_detail_page.dart';
+import 'package:arxiv/pages/paper_notes_page.dart';
 import 'package:arxiv/pages/pdf_viewer.dart';
 import 'package:arxiv/pages/settings_page.dart';
-import 'package:arxiv/theme/app_theme.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_pull_to_refresh/liquid_pull_to_refresh.dart';
-import 'package:theme_provider/theme_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:ionicons/ionicons.dart';
@@ -35,6 +36,7 @@ class _HomePageState extends State<HomePage> {
 
   var isHomeScreenLoading = true;
   TextEditingController searchTermController = TextEditingController();
+  int notesRefreshToken = 0;
 
   var dio = Dio();
   List<Paper> data = [];
@@ -75,6 +77,15 @@ class _HomePageState extends State<HomePage> {
       homeScreenError = result.errorMessage;
       isHomeScreenLoading = false;
     });
+  }
+
+  Future<void> runFeedSearch(String query) async {
+    searchTermController.text = query;
+    await search(resetPagination: true);
+  }
+
+  Future<void> searchCategory(ArxivCategory category) async {
+    await runFeedSearch(category.query);
   }
 
   Future<void> toggleSortOrder() async {
@@ -150,6 +161,43 @@ class _HomePageState extends State<HomePage> {
     await launchUrl(Uri.parse(pdfUrlFor(paperURL)));
   }
 
+  Future<void> openPaperDetails(Paper paper) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaperDetailPage(
+          paper: paper,
+          downloadPaper: downloadPaper,
+          parseAndLaunchURL: parseAndLaunchURL,
+          onSearchQuerySelected: runFeedSearch,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      notesRefreshToken++;
+    });
+  }
+
+  Future<void> openPaperNotes() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaperNotesPage(
+          downloadPaper: downloadPaper,
+          parseAndLaunchURL: parseAndLaunchURL,
+          onSearchQuerySelected: runFeedSearch,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    setState(() {
+      notesRefreshToken++;
+    });
+  }
+
   String pdfUrlFor(String paperURL) {
     var selectedURL = paperURL.trim();
     if (selectedURL.startsWith("http") && selectedURL.contains("/pdf/")) {
@@ -181,10 +229,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final currentTheme = ThemeProvider.themeOf(context);
-    final pairedThemeId = pairedBrightnessThemeId(currentTheme.id);
-    final isDark = colorScheme.brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("OpenScholarXIV"),
@@ -209,6 +253,7 @@ class _HomePageState extends State<HomePage> {
                   builder: (context) => BookmarksPage(
                     downloadPaper: downloadPaper,
                     parseAndLaunchURL: parseAndLaunchURL,
+                    onSearchQuerySelected: runFeedSearch,
                   ),
                 ),
               );
@@ -216,17 +261,12 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.bookmark_border_outlined),
           ),
 
-          // CHANGE THEME
+          // PAPER NOTES
           IconButton(
             onPressed: () {
-              final controller = ThemeProvider.controllerOf(context);
-              if (controller.hasTheme(pairedThemeId)) {
-                controller.setTheme(pairedThemeId);
-              }
+              openPaperNotes();
             },
-            icon: Icon(
-              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-            ),
+            icon: const Icon(Icons.sticky_note_2_outlined),
           ),
 
           // CHAT WITH AI
@@ -257,6 +297,7 @@ class _HomePageState extends State<HomePage> {
               searchFunction: search,
               toggleSortOrder: toggleSortOrder,
               sortOrderNewest: sortOrderNewest,
+              onCategorySelected: searchCategory,
             ),
 
             // Data or Loading
@@ -300,6 +341,8 @@ class _HomePageState extends State<HomePage> {
                         downloadPaper: downloadPaper,
                         parseAndLaunchURL: parseAndLaunchURL,
                         isBookmarked: false,
+                        onCardTap: () => openPaperDetails(eachPaper),
+                        notesRefreshToken: notesRefreshToken,
                       );
                     }).toList(),
                   )

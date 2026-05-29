@@ -193,10 +193,25 @@ class Arxiv {
 
   static Uri queryUriFor(String term, {int page = 0, int pageSize = 30}) {
     return Uri.https(_host, _path, {
-      "search_query": "all:${term.trim()}",
+      "search_query": searchQueryFor(term),
       "start": page.toString(),
       "max_results": pageSize.toString(),
     });
+  }
+
+  static String searchQueryFor(String term) {
+    final trimmedTerm = term.trim();
+    if (_isArxivFieldQuery(trimmedTerm)) {
+      return trimmedTerm;
+    }
+    return "all:$trimmedTerm";
+  }
+
+  static bool _isArxivFieldQuery(String term) {
+    return RegExp(
+      r'^(all|ti|au|abs|co|jr|cat|rn|id):',
+      caseSensitive: false,
+    ).hasMatch(term);
   }
 
   static Future<List<Paper>> search(

@@ -14,6 +14,14 @@ void main() {
     expect(uri.queryParameters['max_results'], '10');
   });
 
+  test('Arxiv.queryUriFor passes arXiv field queries through', () {
+    final categoryUri = Arxiv.queryUriFor('cat:cs.AI');
+    final authorUri = Arxiv.queryUriFor('au:"Ada Lovelace"');
+
+    expect(categoryUri.queryParameters['search_query'], 'cat:cs.AI');
+    expect(authorUri.queryParameters['search_query'], 'au:"Ada Lovelace"');
+  });
+
   test('Paper.fromJson retains arXiv entry metadata', () {
     final paper = Paper.fromJson(
       {

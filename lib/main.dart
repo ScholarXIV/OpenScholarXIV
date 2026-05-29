@@ -2,7 +2,9 @@ import "package:arxiv/models/bookmarks.dart";
 import "package:arxiv/models/chat_message.dart";
 import "package:arxiv/models/chat_thread.dart";
 import "package:arxiv/models/paper.dart";
-import "package:arxiv/pages/home_page.dart";
+import "package:arxiv/models/paper_note.dart";
+// import "package:arxiv/pages/home_page.dart";
+import "package:arxiv/pages/splash_screen.dart";
 import "package:arxiv/theme/app_theme.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
@@ -18,6 +20,7 @@ void main() async {
   Hive.registerAdapter(RoleAdapter());
   Hive.registerAdapter(ChatMessageAdapter());
   Hive.registerAdapter(ChatThreadAdapter());
+  Hive.registerAdapter(PaperNoteAdapter());
   runApp(const MyApp());
 }
 
@@ -63,8 +66,8 @@ class _MyAppState extends State<MyApp> {
               theme: theme,
               debugShowCheckedModeBanner: false,
               initialRoute: "/",
-              routes: {"/": (context) => const HomePage()},
-              // routes: {"/": (context) => const SplashScreen()},
+              // routes: {"/": (context) => const HomePage()},
+              routes: {"/": (context) => const SplashScreen()},
             );
           },
         ),

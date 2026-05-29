@@ -1,4 +1,5 @@
 // ignore_for_file: file_names
+import 'package:arxiv/data/arxiv_categories.dart';
 import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -9,12 +10,14 @@ class SearchBox extends StatefulWidget {
     required this.searchFunction,
     required this.toggleSortOrder,
     required this.sortOrderNewest,
+    required this.onCategorySelected,
   });
 
   final TextEditingController searchTermController;
   final Function searchFunction;
   final Function toggleSortOrder;
   final bool sortOrderNewest;
+  final ValueChanged<ArxivCategory> onCategorySelected;
 
   @override
   State<SearchBox> createState() => _SearchBoxState();
@@ -36,6 +39,35 @@ class _SearchBoxState extends State<SearchBox> {
 
   void clearSearchQuery() {
     widget.searchTermController.clear();
+  }
+
+  List<PopupMenuEntry<ArxivCategory>> buildCategoryMenuItems() {
+    final items = <PopupMenuEntry<ArxivCategory>>[];
+    String? currentGroup;
+
+    for (final category in arxivCategories) {
+      if (category.group != currentGroup) {
+        currentGroup = category.group;
+        items.add(
+          PopupMenuItem<ArxivCategory>(
+            enabled: false,
+            child: Text(
+              currentGroup,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        );
+      }
+
+      items.add(
+        PopupMenuItem<ArxivCategory>(
+          value: category,
+          child: Text(category.menuLabel),
+        ),
+      );
+    }
+
+    return items;
   }
 
   @override
@@ -79,6 +111,12 @@ class _SearchBoxState extends State<SearchBox> {
                 },
               ),
             ),
+          ),
+          PopupMenuButton<ArxivCategory>(
+            tooltip: "Choose category",
+            icon: const Icon(Icons.category_outlined),
+            onSelected: widget.onCategorySelected,
+            itemBuilder: (context) => buildCategoryMenuItems(),
           ),
           IconButton(
             onPressed: () {

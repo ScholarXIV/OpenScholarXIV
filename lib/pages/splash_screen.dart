@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import "package:lottie/lottie.dart";
 import "package:arxiv/pages/home_page.dart";
-import "package:another_flutter_splash_screen/another_flutter_splash_screen.dart";
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,20 +11,40 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(const Duration(milliseconds: 2000), () {
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FlutterSplashScreen.fadeIn(
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+
+    return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      animationDuration: const Duration(milliseconds: 350),
-      duration: const Duration(milliseconds: 3000),
-      childWidget: SizedBox(
-        height: 150.0,
-        width: 150.0,
-        child: Lottie.asset(
-          "assets/animation/OpenScholarXIVLoader.json",
-          repeat: true,
+      body: Center(
+        child: SizedBox(
+          height: 150.0,
+          width: 150.0,
+          child: ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              isDark ? Colors.white : Colors.black,
+              BlendMode.srcIn,
+            ),
+            child: Lottie.asset(
+              "assets/animation/OpenScholarXIVLoader.json",
+              repeat: true,
+            ),
+          ),
         ),
       ),
-      nextScreen: const HomePage(),
     );
   }
 }

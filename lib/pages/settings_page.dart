@@ -47,6 +47,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final colorScheme = Theme.of(context).colorScheme;
     final controller = ThemeProvider.controllerOf(context);
     final selectedThemeId = ThemeProvider.themeOf(context).id;
+    final pairedThemeId = pairedBrightnessThemeId(selectedThemeId);
+    final isDark = colorScheme.brightness == Brightness.dark;
     final themes = controller.allThemes;
 
     return Scaffold(
@@ -59,6 +61,18 @@ class _SettingsPageState extends State<SettingsPage> {
             color: colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 8.0),
+          _SettingsSwitchTile(
+            icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+            title: "Dark mode",
+            subtitle: "Switches the current theme between light and dark.",
+            value: isDark,
+            onChanged: (_) {
+              if (controller.hasTheme(pairedThemeId)) {
+                controller.setTheme(pairedThemeId);
+              }
+            },
+          ),
+          const SizedBox(height: 4.0),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
