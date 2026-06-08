@@ -25,16 +25,16 @@ OpenScholarXIV is a free and open-source app for finding, reading, bookmarking, 
   <img src="assets/banners/OpenScholarXIV.png" width="400" alt="Find papers">
   <img src="assets/banners/OpenScholarXIV2.png" width="400" alt="Read and listen to summaries">
   <img src="assets/banners/OpenScholarXIV3.png" width="400" alt="Deep dive with AI">
-  <img src="assets/banners/OpenScholarXIV14.png" width="400" alt="Chat History">
+  <img src="assets/banners/OpenScholarXIV14.jpg" width="400" alt="Chat History">
   <img src="assets/banners/OpenScholarXIV4.png" width="400" alt="Bring your own keys">
   <!--<img src="assets/banners/OpenScholarXIV5.png" width="400" alt="Choose themes">-->
   <img src="assets/banners/OpenScholarXIV6.png" width="400" alt="Read papers in-app">
   <img src="assets/banners/OpenScholarXIV8.png" width="400" alt="Bookmark papers">
-  <img src="assets/banners/OpenScholarXIV10.png" width="400" alt="Paper Details">
-  <img src="assets/banners/OpenScholarXIV11.png" width="400" alt="Paper Notes">
-  <img src="assets/banners/OpenScholarXIV12.png" width="400" alt="Paper Category">
-  <img src="assets/banners/OpenScholarXIV13.png" width="400" alt="Search By Author">
-  <img src="assets/banners/OpenScholarXIV9.png" width="400" alt="Material You Themes">
+  <img src="assets/banners/OpenScholarXIV10.jpg" width="400" alt="Paper Details">
+  <img src="assets/banners/OpenScholarXIV11.jpg" width="400" alt="Paper Notes">
+  <img src="assets/banners/OpenScholarXIV12.jpg" width="400" alt="Paper Category">
+  <img src="assets/banners/OpenScholarXIV13.jpg" width="400" alt="Search By Author">
+  <img src="assets/banners/OpenScholarXIV9.jpg" width="400" alt="Material You Themes">
 </div>
 
 ## Contributing
