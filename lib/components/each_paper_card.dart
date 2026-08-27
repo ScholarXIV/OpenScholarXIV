@@ -10,7 +10,7 @@ import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 import 'package:hive/hive.dart';
-import 'package:ionicons/ionicons.dart';
+import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 class EachPaperCard extends StatefulWidget {

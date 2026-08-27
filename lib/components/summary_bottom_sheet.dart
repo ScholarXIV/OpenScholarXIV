@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 import 'package:hive/hive.dart';
-import 'package:ionicons/ionicons.dart';
+import 'package:ionicons_plus/ionicons_plus.dart';
 
 class SummaryBottomSheet extends StatefulWidget {
   const SummaryBottomSheet({
