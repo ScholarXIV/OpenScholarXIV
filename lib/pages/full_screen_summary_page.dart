@@ -1,7 +1,7 @@
 // ignore_for_file: file_names
 import 'package:arxiv/models/paper.dart';
 import 'package:flutter/material.dart';
-import 'package:ionicons/ionicons.dart';
+import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 
