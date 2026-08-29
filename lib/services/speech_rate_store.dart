@@ -12,6 +12,7 @@ class SpeechRateStore {
     if (stored is num) {
       return stored.toDouble();
     }
+    // First launch: Hive has no saved rate yet.
     return defaultRate;
   }
 

@@ -1,5 +1,6 @@
 import 'package:arxiv/data/arxiv_categories.dart';
 
+// Only a single `cat:code` term is treated as a category filter (not compound queries).
 final _categoryQueryPattern = RegExp(r'^cat:([^\s]+)$', caseSensitive: false);
 
 List<ArxivCategory> featuredArxivCategories() {
@@ -21,7 +22,6 @@ String? categoryCodeFromQuery(String query) {
   return code;
 }
 
-// casse-insensitive look up of category by a given code
 ArxivCategory? categoryByCode(String code) {
   final normalizedCode = code.trim().toLowerCase();
   for (final category in arxivCategories) {
@@ -50,9 +50,11 @@ ArxivCategory? categoryForFilterLabel(String label) {
 }
 
 ArxivCategory? categoryFromSearchInput(String input) {
+  // Accepts either `cat:cs.LG` or the label shown in the search field.
   return categoryForQuery(input) ?? categoryForFilterLabel(input);
 }
 
+/// Maps search-field text to the query sent to arXiv (`cat:code` or free text).
 String effectiveSearchQuery(String input) {
   final category = categoryFromSearchInput(input);
   if (category != null) {
@@ -68,6 +70,7 @@ List<ArxivCategory> visibleFilterCategories(String currentQuery) {
     return featured;
   }
 
+  // Keep the active filter at the front of the horizontal chip row.
   final remaining = featured
       .where((category) => category.code != activeCategory.code)
       .toList();
@@ -87,19 +90,21 @@ bool isCategorySelected(ArxivCategory category, String currentQuery) {
   return activeCategory?.code == category.code;
 }
 
-void handleCategoryChipTap({
+/// Tapping a selected chip again clears the category filter.
+Future<void> handleCategoryChipTap({
   required ArxivCategory category,
   required String currentQuery,
   required void Function(ArxivCategory category) onCategorySelected,
-  required void Function() onClearCategory,
-}) {
+  required Future<void> Function() onClearCategory,
+}) async {
   if (isCategorySelected(category, currentQuery)) {
-    onClearCategory();
+    await onClearCategory();
     return;
   }
   onCategorySelected(category);
 }
 
 String categoryChipLabel(ArxivCategory category) => category.label;
+// Written into the search field when a category filter is active.
 String categoryFilterLabel(ArxivCategory category) =>
     "${category.code} - ${category.label}";

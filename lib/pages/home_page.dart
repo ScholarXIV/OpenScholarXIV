@@ -88,6 +88,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> searchCategory(ArxivCategory category) async {
+    // Show the readable label in the field; effectiveSearchQuery converts it for arXiv.
     searchTermController.text = categoryFilterLabel(category);
     await search(resetPagination: true);
   }
@@ -100,6 +101,7 @@ class _HomePageState extends State<HomePage> {
 
   void _onSearchTermChanged() {
     if (!mounted) return;
+    // Rebuilds SearchBox (clear button) and filter chips when the field text changes.
     setState(() {});
   }
 

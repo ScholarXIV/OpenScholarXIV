@@ -118,9 +118,28 @@ void main() {
     test('passes through free-text searches unchanged', () {
       expect(effectiveSearchQuery('transformer'), 'transformer');
     });
+
+    test('trims free-text searches without altering category filters', () {
+      expect(effectiveSearchQuery('  transformer  '), 'transformer');
+      expect(
+        effectiveSearchQuery('  cs.LG - Machine Learning  '),
+        'cat:cs.LG',
+      );
+    });
+
+    test('returns empty string for blank input', () {
+      expect(effectiveSearchQuery(''), '');
+      expect(effectiveSearchQuery('   '), '');
+    });
   });
 
   group('visibleFilterCategories', () {
+    test('returns featured categories when no filter is active', () {
+      final visible = visibleFilterCategories('');
+
+      expect(visible.map((category) => category.code), featuredArxivCategories().map((category) => category.code));
+    });
+
     test('puts the active category first even when it is not featured', () {
       final visible = visibleFilterCategories('stat.TH - Statistics Theory');
 
@@ -159,6 +178,60 @@ void main() {
       expect(isCategorySelected(category, 'cat:cs.LG'), isTrue);
       expect(isCategorySelected(category, 'cs.LG - Machine Learning'), isTrue);
       expect(isCategorySelected(category, 'transformer'), isFalse);
+    });
+  });
+
+  group('handleCategoryChipTap', () {
+    const category = ArxivCategory(
+      code: 'cs.LG',
+      label: 'Machine Learning',
+      group: 'Computer Science',
+    );
+
+    test('selects a category when it is not active', () async {
+      ArxivCategory? selected;
+      var cleared = false;
+
+      await handleCategoryChipTap(
+        category: category,
+        currentQuery: '',
+        onCategorySelected: (value) => selected = value,
+        onClearCategory: () async => cleared = true,
+      );
+
+      expect(selected, category);
+      expect(cleared, isFalse);
+    });
+
+    test('clears the filter when tapping the active category', () async {
+      ArxivCategory? selected;
+      var cleared = false;
+
+      await handleCategoryChipTap(
+        category: category,
+        currentQuery: 'cs.LG - Machine Learning',
+        onCategorySelected: (value) => selected = value,
+        onClearCategory: () async => cleared = true,
+      );
+
+      expect(selected, isNull);
+      expect(cleared, isTrue);
+    });
+  });
+
+  group('featuredArxivCategoryCodes', () {
+    test('every featured code exists in the category catalog', () {
+      for (final code in featuredArxivCategoryCodes) {
+        expect(categoryByCode(code), isNotNull, reason: 'Missing category: $code');
+      }
+    });
+  });
+
+  group('categoryForFilterLabel', () {
+    test('requires an exact filter label match', () {
+      expect(categoryForFilterLabel('cs.LG - Machine Learning')?.code, 'cs.LG');
+      expect(categoryForFilterLabel('Machine Learning'), isNull);
+      expect(categoryForFilterLabel('cs.LG'), isNull);
     });
   });
 

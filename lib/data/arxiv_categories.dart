@@ -9,10 +9,10 @@ class ArxivCategory {
   final String label;
   final String group;
 
-  String get menuLabel => "$code - $label";
   String get query => "cat:$code";
 }
 
+// Order is preserved in the home-screen filter chip row.
 const featuredArxivCategoryCodes = [
   "cs.AI",
   "cs.LG",

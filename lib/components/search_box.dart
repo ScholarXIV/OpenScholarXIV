@@ -4,7 +4,7 @@ import 'package:arxiv/data/arxiv_categories.dart';
 import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-class SearchBox extends StatefulWidget {
+class SearchBox extends StatelessWidget {
   const SearchBox({
     super.key,
     required this.searchTermController,
@@ -20,21 +20,17 @@ class SearchBox extends StatefulWidget {
   final bool sortOrderNewest;
   final ValueChanged<ArxivCategory> onCategorySelected;
 
-  @override
-  State<SearchBox> createState() => _SearchBoxState();
-}
-
-class _SearchBoxState extends State<SearchBox> {
   void clearSearchQuery() {
-    widget.searchTermController.clear();
-    widget.searchFunction(resetPagination: true);
+    searchTermController.clear();
+    // Empty input reloads suggested papers instead of running a blank search.
+    searchFunction(resetPagination: true);
   }
 
-  void openCategoryPicker() {
+  void openCategoryPicker(BuildContext context) {
     showCategoryPickerSheet(
       context,
-      currentQuery: widget.searchTermController.text.trim(),
-      onCategorySelected: widget.onCategorySelected,
+      currentQuery: searchTermController.text.trim(),
+      onCategorySelected: onCategorySelected,
     );
   }
 
@@ -56,7 +52,7 @@ class _SearchBoxState extends State<SearchBox> {
                 color: subtleSurfaceColor(colorScheme),
               ),
               child: TextField(
-                controller: widget.searchTermController,
+                controller: searchTermController,
                 keyboardType: TextInputType.url,
                 cursorColor: colorScheme.primary,
                 style: TextStyle(color: colorScheme.onSurface),
@@ -65,7 +61,7 @@ class _SearchBoxState extends State<SearchBox> {
                   hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15.0),
-                  suffixIcon: widget.searchTermController.text.isNotEmpty
+                  suffixIcon: searchTermController.text.isNotEmpty
                       ? IconButton(
                           onPressed: clearSearchQuery,
                           icon: const Icon(Icons.clear),
@@ -73,25 +69,23 @@ class _SearchBoxState extends State<SearchBox> {
                       : null,
                 ),
                 onSubmitted: (searchTerm) {
-                  widget.searchFunction(resetPagination: true);
+                  searchFunction(resetPagination: true);
                 },
               ),
             ),
           ),
           IconButton(
             tooltip: "Browse categories",
-            onPressed: openCategoryPicker,
+            onPressed: () => openCategoryPicker(context),
             icon: const Icon(Icons.category_outlined),
           ),
           IconButton(
-            onPressed: () {
-              widget.toggleSortOrder();
-            },
+            onPressed: toggleSortOrder,
             icon: const Icon(Icons.sort),
           ),
           IconButton(
             onPressed: () {
-              widget.searchFunction(resetPagination: true);
+              searchFunction(resetPagination: true);
             },
             icon: const Icon(Icons.search),
           ),

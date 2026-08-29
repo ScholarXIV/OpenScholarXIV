@@ -12,10 +12,12 @@ Future<T?> showAppBottomSheet<T>(
     isScrollControlled: isScrollControlled,
     showDragHandle: showDragHandle,
     useSafeArea: useSafeArea,
+    clipBehavior: Clip.antiAlias,
     builder: (context) => child,
   );
 }
 
+/// Shared header + scrollable body layout for modal bottom sheets.
 class AppBottomSheetShell extends StatelessWidget {
   const AppBottomSheetShell({
     super.key,
@@ -24,6 +26,7 @@ class AppBottomSheetShell extends StatelessWidget {
     this.actions = const [],
     this.onClose,
     this.maxHeightFactor = 0.72,
+    this.titleTextStyle,
   });
 
   final String title;
@@ -31,6 +34,7 @@ class AppBottomSheetShell extends StatelessWidget {
   final List<Widget> actions;
   final VoidCallback? onClose;
   final double maxHeightFactor;
+  final TextStyle? titleTextStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +48,7 @@ class AppBottomSheetShell extends StatelessWidget {
           constraints: BoxConstraints(maxHeight: maxHeight),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16.0, 4.0, 4.0, 8.0),
@@ -53,10 +57,12 @@ class AppBottomSheetShell extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.onSurface,
-                        ),
+                        style:
+                            titleTextStyle ??
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
                       ),
                     ),
                     ...actions,
@@ -71,7 +77,12 @@ class AppBottomSheetShell extends StatelessWidget {
                   ],
                 ),
               ),
-              Flexible(child: child),
+              Flexible(
+                child: ClipRect(
+                  // Stop list content from painting over the title row while scrolling.
+                  child: child,
+                ),
+              ),
             ],
           ),
         ),
