@@ -25,8 +25,9 @@ class _SearchFilterChipsState extends State<SearchFilterChips> {
   @override
   void didUpdateWidget(SearchFilterChips oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.currentQuery != widget.currentQuery) {
-      // Active category moves to index 0 when the filter changes.
+    final oldActive = categoryFromSearchInput(oldWidget.currentQuery)?.code;
+    final newActive = categoryFromSearchInput(widget.currentQuery)?.code;
+    if (oldActive != newActive) {
       _scrollToStart();
     }
   }
@@ -78,12 +79,14 @@ class _SearchFilterChipsState extends State<SearchFilterChips> {
                 return CategoryFilterChip(
                   label: categoryChipLabel(category),
                   selected: isCategorySelected(category, widget.currentQuery),
-                  onTap: () => handleCategoryChipTap(
-                    category: category,
-                    currentQuery: widget.currentQuery,
-                    onCategorySelected: widget.onCategorySelected,
-                    onClearCategory: widget.onClearCategory,
-                  ),
+                  onTap: () async {
+                    await handleCategoryChipTap(
+                      category: category,
+                      currentQuery: widget.currentQuery,
+                      onCategorySelected: widget.onCategorySelected,
+                      onClearCategory: widget.onClearCategory,
+                    );
+                  },
                 );
               },
             ),

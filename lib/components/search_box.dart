@@ -20,10 +20,10 @@ class SearchBox extends StatelessWidget {
   final bool sortOrderNewest;
   final ValueChanged<ArxivCategory> onCategorySelected;
 
-  void clearSearchQuery() {
+  Future<void> clearSearchQuery() async {
     searchTermController.clear();
     // Empty input reloads suggested papers instead of running a blank search.
-    searchFunction(resetPagination: true);
+    await searchFunction(resetPagination: true);
   }
 
   void openCategoryPicker(BuildContext context) {
@@ -68,8 +68,8 @@ class SearchBox extends StatelessWidget {
                         )
                       : null,
                 ),
-                onSubmitted: (searchTerm) {
-                  searchFunction(resetPagination: true);
+                onSubmitted: (searchTerm) async {
+                  await searchFunction(resetPagination: true);
                 },
               ),
             ),
@@ -80,12 +80,14 @@ class SearchBox extends StatelessWidget {
             icon: const Icon(Icons.category_outlined),
           ),
           IconButton(
-            onPressed: () => toggleSortOrder(),
+            onPressed: () async {
+              await toggleSortOrder();
+            },
             icon: const Icon(Icons.sort),
           ),
           IconButton(
-            onPressed: () {
-              searchFunction(resetPagination: true);
+            onPressed: () async {
+              await searchFunction(resetPagination: true);
             },
             icon: const Icon(Icons.search),
           ),
