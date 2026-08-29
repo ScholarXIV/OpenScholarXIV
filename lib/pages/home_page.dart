@@ -3,7 +3,9 @@ import 'package:arxiv/apis/arxiv.dart';
 import 'package:arxiv/components/each_paper_card.dart';
 import 'package:arxiv/components/paper_card_skeleton.dart';
 import 'package:arxiv/components/search_box.dart';
+import 'package:arxiv/components/search_filter_chips.dart';
 import 'package:arxiv/data/arxiv_categories.dart';
+import 'package:arxiv/services/arxiv_category_parser.dart';
 import 'package:arxiv/models/paper.dart';
 import 'package:arxiv/pages/ai_chat_page.dart';
 import 'package:arxiv/pages/bookmarks_page.dart';
@@ -55,16 +57,17 @@ class _HomePageState extends State<HomePage> {
       data = [];
     });
 
-    var searchTerm = searchTermController.text.toString().trim();
+    final rawSearchInput = searchTermController.text.trim();
     late final ArxivSearchResult result;
-    if (searchTerm.isNotEmpty) {
+    if (rawSearchInput.isEmpty) {
+      result = await suggestedPapers();
+    } else {
+      final searchTerm = effectiveSearchQuery(rawSearchInput);
       result = await Arxiv.searchWithMetadata(
         searchTerm,
         page: startPagination,
         pageSize: maxContent,
       );
-    } else {
-      result = await suggestedPapers();
     }
 
     if (!mounted || requestSerial != _searchRequestSerial) {
@@ -85,7 +88,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> searchCategory(ArxivCategory category) async {
-    await runFeedSearch(category.query);
+    // Show the readable label in the field; effectiveSearchQuery converts it for arXiv.
+    searchTermController.text = categoryFilterLabel(category);
+    await search(resetPagination: true);
+  }
+
+  Future<void> clearCategoryFilter() async {
+    searchTermController.clear();
+    startPagination = 0;
+    await search(resetPagination: true);
+  }
+
+  void _onSearchTermChanged() {
+    if (!mounted) return;
+    // Rebuilds SearchBox (clear button) and filter chips when the field text changes.
+    setState(() {});
   }
 
   Future<void> toggleSortOrder() async {
@@ -217,11 +234,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    searchTermController.addListener(_onSearchTermChanged);
     search();
   }
 
   @override
   void dispose() {
+    searchTermController.removeListener(_onSearchTermChanged);
     searchTermController.dispose();
     super.dispose();
   }
@@ -298,6 +317,11 @@ class _HomePageState extends State<HomePage> {
               toggleSortOrder: toggleSortOrder,
               sortOrderNewest: sortOrderNewest,
               onCategorySelected: searchCategory,
+            ),
+            SearchFilterChips(
+              currentQuery: searchTermController.text.trim(),
+              onCategorySelected: searchCategory,
+              onClearCategory: clearCategoryFilter,
             ),
 
             // Data or Loading

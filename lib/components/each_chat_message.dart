@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:hive/hive.dart';
+import 'package:arxiv/services/speech_rate_store.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:share_plus/share_plus.dart';
@@ -28,7 +28,8 @@ class EachChatMessage extends StatefulWidget {
 
 class _EachChatMessageState extends State<EachChatMessage> {
   var tts = FlutterTts();
-  var speedRate = 0.5;
+  final SpeechRateStore _speechRateStore = SpeechRateStore();
+  var speedRate = SpeechRateStore.defaultRate;
   var speedFactor = 0.1;
   var isSpeaking = false;
   var toolsRevealed = false;
@@ -90,11 +91,11 @@ class _EachChatMessageState extends State<EachChatMessage> {
     });
   }
 
-  void getSpeedRate() async {
-    final box = await Hive.openBox("speedRateBox");
-    speedRate = await box.get("speedRate") ?? 0.5;
-    await Hive.close();
-    tts.setSpeechRate(speedRate);
+  Future<void> getSpeedRate() async {
+    final rate = await _speechRateStore.load();
+    if (!mounted) return;
+    setState(() => speedRate = rate);
+    await tts.setSpeechRate(speedRate);
   }
 
   @override

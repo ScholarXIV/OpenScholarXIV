@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 import 'dart:convert';
 
+import 'package:arxiv/components/app_bottom_sheet.dart';
 import 'package:arxiv/components/id_and_date.dart';
 import 'package:arxiv/components/summary_bottom_sheet.dart';
 import 'package:arxiv/models/paper.dart';
@@ -75,9 +76,9 @@ class _EachPaperCardState extends State<EachPaperCard> {
   }
 
   void showSummary(dynamic paperData) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SummaryBottomSheet(
+    showAppBottomSheet(
+      context,
+      child: SummaryBottomSheet(
         paperData: paperData,
         parseAndLaunchURL: widget.parseAndLaunchURL,
       ),

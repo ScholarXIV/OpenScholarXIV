@@ -1,11 +1,10 @@
 // ignore_for_file: file_names
 import 'package:arxiv/models/paper.dart';
+import 'package:arxiv/services/speech_rate_store.dart';
 import 'package:flutter/material.dart';
 import 'package:ionicons_plus/ionicons_plus.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_tex/flutter_tex.dart';
-
-import 'package:hive/hive.dart';
 
 class FullScreenSummaryPage extends StatefulWidget {
   const FullScreenSummaryPage({
@@ -22,67 +21,67 @@ class FullScreenSummaryPage extends StatefulWidget {
 }
 
 class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
-  var tts = FlutterTts();
+  final FlutterTts _tts = FlutterTts();
+  final SpeechRateStore _speechRateStore = SpeechRateStore();
   var isSpeaking = false;
   var summary = "";
-  var speedRate = 0.5;
+  var speedRate = SpeechRateStore.defaultRate;
   var speedFactor = 0.1;
 
-  void readSummary() async {
-    if (isSpeaking == false) {
-      await tts.setLanguage("en-US");
-      tts.speak(summary);
-    } else {
-      tts.stop();
-    }
-    isSpeaking = !isSpeaking;
-    setState(() {});
+  Future<void> _loadSpeedRate() async {
+    final rate = await _speechRateStore.load();
+    if (!mounted) return;
+    setState(() => speedRate = rate);
+    await _tts.setSpeechRate(speedRate);
   }
 
-  void changeSpeedRate({bool? increase}) async {
+  Future<void> readSummary() async {
+    if (!isSpeaking) {
+      await _tts.setLanguage("en-US");
+      await _tts.setSpeechRate(speedRate);
+      await _tts.speak(summary);
+    } else {
+      await _tts.stop();
+    }
+    if (!mounted) return;
+    setState(() => isSpeaking = !isSpeaking);
+  }
+
+  Future<void> changeSpeedRate({bool? increase}) async {
     if (increase == true) {
       if (speedRate < 0.9) {
         speedRate += speedFactor;
       }
-    } else {
-      if (speedRate >= 0.1) {
-        speedRate -= speedFactor;
-      }
+    } else if (speedRate >= 0.1) {
+      speedRate -= speedFactor;
     }
-    tts.stop();
-    tts.setSpeechRate(speedRate);
+    await _tts.stop();
+    await _tts.setSpeechRate(speedRate);
     isSpeaking = false;
-    readSummary();
-    final box = await Hive.openBox("speedRateBox");
-    box.put("speedRate", speedRate);
-    await Hive.close();
+    await _speechRateStore.save(speedRate);
+    if (!mounted) return;
+    setState(() {});
+    await readSummary();
   }
 
-  void getSpeedRate() async {
-    final box = await Hive.openBox("speedRateBox");
-    speedRate = await box.get("speedRate");
-    await Hive.close();
-    tts.setSpeechRate(speedRate);
-  }
-
-  void resetSpeechRate() async {
-    speedRate = 0.5;
-    final box = await Hive.openBox("speedRateBox");
-    box.put("speedRate", speedRate);
-    await Hive.close();
-    tts.stop();
-    tts.setSpeechRate(speedRate);
+  Future<void> resetSpeechRate() async {
+    speedRate = SpeechRateStore.defaultRate;
+    await _speechRateStore.save(speedRate);
+    await _tts.stop();
+    await _tts.setSpeechRate(speedRate);
     isSpeaking = false;
-    readSummary();
+    if (!mounted) return;
+    setState(() {});
+    await readSummary();
   }
 
   @override
   void initState() {
     super.initState();
-    getSpeedRate();
-    tts.setCompletionHandler(() {
+    _loadSpeedRate();
+    _tts.setCompletionHandler(() {
       isSpeaking = false;
-      setState(() {});
+      if (mounted) setState(() {});
     });
     summary = widget.paperData.summary
         .trim()
@@ -92,78 +91,58 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
 
   @override
   Widget build(BuildContext context) {
-    String summary = widget.paperData.summary;
+    final summaryText = widget.paperData.summary;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Summary"),
         actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              isSpeaking == true
-                  ? Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            if (speedRate > 0.0) {
-                              changeSpeedRate(increase: false);
-                            }
-                          },
-                          icon: Icon(
-                            Icons.remove,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            resetSpeechRate();
-                          },
-                          child: Text(
-                            speedRate.toStringAsFixed(1).toString(),
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            if (speedRate < 1.0) {
-                              changeSpeedRate(increase: true);
-                            }
-                          },
-                          icon: const Icon(Icons.add),
-                        ),
-                      ],
-                    )
-                  : Container(),
-              IconButton(
-                onPressed: () {
-                  readSummary();
-                },
-                icon: Icon(
-                  isSpeaking == true
-                      ? Ionicons.stop_outline
-                      : Ionicons.volume_high_outline,
-                ),
+          if (isSpeaking)
+            IconButton(
+              onPressed: () {
+                if (speedRate > 0.0) {
+                  changeSpeedRate(increase: false);
+                }
+              },
+              icon: Icon(Icons.remove, color: colorScheme.onSurfaceVariant),
+            ),
+          if (isSpeaking)
+            TextButton(
+              onPressed: resetSpeechRate,
+              child: Text(
+                speedRate.toStringAsFixed(1),
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 5.0, bottom: 3.0),
-                child: IconButton(
-                  onPressed: () {
-                    widget.parseAndLaunchURL(
-                      widget.paperData.pdfUrl.isNotEmpty
-                          ? widget.paperData.pdfUrl
-                          : widget.paperData.id,
-                      widget.paperData.title,
-                    );
-                  },
-                  icon: const Icon(Ionicons.open_outline),
-                ),
-              ),
-            ],
+            ),
+          if (isSpeaking)
+            IconButton(
+              onPressed: () {
+                if (speedRate < 1.0) {
+                  changeSpeedRate(increase: true);
+                }
+              },
+              icon: Icon(Icons.add, color: colorScheme.onSurfaceVariant),
+            ),
+          IconButton(
+            onPressed: readSummary,
+            icon: Icon(
+              isSpeaking ? Ionicons.stop_outline : Ionicons.volume_high_outline,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 5.0, bottom: 3.0),
+            child: IconButton(
+              onPressed: () {
+                widget.parseAndLaunchURL(
+                  widget.paperData.pdfUrl.isNotEmpty
+                      ? widget.paperData.pdfUrl
+                      : widget.paperData.id,
+                  widget.paperData.title,
+                );
+              },
+              icon: const Icon(Ionicons.open_outline),
+            ),
           ),
         ],
       ),
@@ -171,10 +150,10 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 10.0, left: 20.0, right: 20.0),
-            child: Paper.containsLatex(summary)
+            child: Paper.containsLatex(summaryText)
                 ? TeXView(
                     child: TeXViewDocument(
-                      summary,
+                      summaryText,
                       style: TeXViewStyle(
                         contentColor: colorScheme.onSurface,
                         textAlign: TeXViewTextAlign.left,
@@ -186,7 +165,7 @@ class _FullScreenSummaryPageState extends State<FullScreenSummaryPage> {
                     ),
                   )
                 : SelectableText(
-                    summary,
+                    summaryText,
                     style: const TextStyle(fontSize: 17.0),
                   ),
           ),

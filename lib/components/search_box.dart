@@ -1,9 +1,10 @@
 // ignore_for_file: file_names
+import 'package:arxiv/components/category_picker_sheet.dart';
 import 'package:arxiv/data/arxiv_categories.dart';
 import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
-class SearchBox extends StatefulWidget {
+class SearchBox extends StatelessWidget {
   const SearchBox({
     super.key,
     required this.searchTermController,
@@ -14,60 +15,23 @@ class SearchBox extends StatefulWidget {
   });
 
   final TextEditingController searchTermController;
-  final Function searchFunction;
-  final Function toggleSortOrder;
+  final Future<void> Function({bool? resetPagination}) searchFunction;
+  final Future<void> Function() toggleSortOrder;
   final bool sortOrderNewest;
   final ValueChanged<ArxivCategory> onCategorySelected;
 
-  @override
-  State<SearchBox> createState() => _SearchBoxState();
-}
-
-class _SearchBoxState extends State<SearchBox> {
-  @override
-  void initState() {
-    super.initState();
-    widget.searchTermController.addListener(() {
-      setState(() {});
-    });
+  Future<void> clearSearchQuery() async {
+    searchTermController.clear();
+    // Empty input reloads suggested papers instead of running a blank search.
+    await searchFunction(resetPagination: true);
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  void clearSearchQuery() {
-    widget.searchTermController.clear();
-  }
-
-  List<PopupMenuEntry<ArxivCategory>> buildCategoryMenuItems() {
-    final items = <PopupMenuEntry<ArxivCategory>>[];
-    String? currentGroup;
-
-    for (final category in arxivCategories) {
-      if (category.group != currentGroup) {
-        currentGroup = category.group;
-        items.add(
-          PopupMenuItem<ArxivCategory>(
-            enabled: false,
-            child: Text(
-              currentGroup,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        );
-      }
-
-      items.add(
-        PopupMenuItem<ArxivCategory>(
-          value: category,
-          child: Text(category.menuLabel),
-        ),
-      );
-    }
-
-    return items;
+  void openCategoryPicker(BuildContext context) {
+    showCategoryPickerSheet(
+      context,
+      currentQuery: searchTermController.text.trim(),
+      onCategorySelected: onCategorySelected,
+    );
   }
 
   @override
@@ -88,7 +52,7 @@ class _SearchBoxState extends State<SearchBox> {
                 color: subtleSurfaceColor(colorScheme),
               ),
               child: TextField(
-                controller: widget.searchTermController,
+                controller: searchTermController,
                 keyboardType: TextInputType.url,
                 cursorColor: colorScheme.primary,
                 style: TextStyle(color: colorScheme.onSurface),
@@ -97,36 +61,33 @@ class _SearchBoxState extends State<SearchBox> {
                   hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15.0),
-                  suffixIcon: widget.searchTermController.text.isNotEmpty
+                  suffixIcon: searchTermController.text.isNotEmpty
                       ? IconButton(
-                          onPressed: () {
-                            clearSearchQuery();
-                          },
+                          onPressed: clearSearchQuery,
                           icon: const Icon(Icons.clear),
                         )
                       : null,
                 ),
-                onSubmitted: (searchTerm) {
-                  widget.searchFunction(resetPagination: true);
+                onSubmitted: (searchTerm) async {
+                  await searchFunction(resetPagination: true);
                 },
               ),
             ),
           ),
-          PopupMenuButton<ArxivCategory>(
-            tooltip: "Choose category",
+          IconButton(
+            tooltip: "Browse categories",
+            onPressed: () => openCategoryPicker(context),
             icon: const Icon(Icons.category_outlined),
-            onSelected: widget.onCategorySelected,
-            itemBuilder: (context) => buildCategoryMenuItems(),
           ),
           IconButton(
-            onPressed: () {
-              widget.toggleSortOrder();
+            onPressed: () async {
+              await toggleSortOrder();
             },
             icon: const Icon(Icons.sort),
           ),
           IconButton(
-            onPressed: () {
-              widget.searchFunction(resetPagination: true);
+            onPressed: () async {
+              await searchFunction(resetPagination: true);
             },
             icon: const Icon(Icons.search),
           ),
