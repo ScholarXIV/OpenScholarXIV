@@ -15,8 +15,8 @@ class SearchBox extends StatelessWidget {
   });
 
   final TextEditingController searchTermController;
-  final Function searchFunction;
-  final Function toggleSortOrder;
+  final Future<void> Function({bool? resetPagination}) searchFunction;
+  final Future<void> Function() toggleSortOrder;
   final bool sortOrderNewest;
   final ValueChanged<ArxivCategory> onCategorySelected;
 
@@ -80,7 +80,7 @@ class SearchBox extends StatelessWidget {
             icon: const Icon(Icons.category_outlined),
           ),
           IconButton(
-            onPressed: toggleSortOrder,
+            onPressed: () => toggleSortOrder(),
             icon: const Icon(Icons.sort),
           ),
           IconButton(
