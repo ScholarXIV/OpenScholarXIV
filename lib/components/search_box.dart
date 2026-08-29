@@ -1,4 +1,5 @@
 // ignore_for_file: file_names
+import 'package:arxiv/components/category_picker_sheet.dart';
 import 'package:arxiv/data/arxiv_categories.dart';
 import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -24,50 +25,17 @@ class SearchBox extends StatefulWidget {
 }
 
 class _SearchBoxState extends State<SearchBox> {
-  @override
-  void initState() {
-    super.initState();
-    widget.searchTermController.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   void clearSearchQuery() {
     widget.searchTermController.clear();
+    widget.searchFunction(resetPagination: true);
   }
 
-  List<PopupMenuEntry<ArxivCategory>> buildCategoryMenuItems() {
-    final items = <PopupMenuEntry<ArxivCategory>>[];
-    String? currentGroup;
-
-    for (final category in arxivCategories) {
-      if (category.group != currentGroup) {
-        currentGroup = category.group;
-        items.add(
-          PopupMenuItem<ArxivCategory>(
-            enabled: false,
-            child: Text(
-              currentGroup,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-        );
-      }
-
-      items.add(
-        PopupMenuItem<ArxivCategory>(
-          value: category,
-          child: Text(category.menuLabel),
-        ),
-      );
-    }
-
-    return items;
+  void openCategoryPicker() {
+    showCategoryPickerSheet(
+      context,
+      currentQuery: widget.searchTermController.text.trim(),
+      onCategorySelected: widget.onCategorySelected,
+    );
   }
 
   @override
@@ -99,9 +67,7 @@ class _SearchBoxState extends State<SearchBox> {
                   contentPadding: const EdgeInsets.symmetric(vertical: 15.0),
                   suffixIcon: widget.searchTermController.text.isNotEmpty
                       ? IconButton(
-                          onPressed: () {
-                            clearSearchQuery();
-                          },
+                          onPressed: clearSearchQuery,
                           icon: const Icon(Icons.clear),
                         )
                       : null,
@@ -112,11 +78,10 @@ class _SearchBoxState extends State<SearchBox> {
               ),
             ),
           ),
-          PopupMenuButton<ArxivCategory>(
-            tooltip: "Choose category",
+          IconButton(
+            tooltip: "Browse categories",
+            onPressed: openCategoryPicker,
             icon: const Icon(Icons.category_outlined),
-            onSelected: widget.onCategorySelected,
-            itemBuilder: (context) => buildCategoryMenuItems(),
           ),
           IconButton(
             onPressed: () {

@@ -80,6 +80,88 @@ void main() {
     });
   });
 
+  group('featuredArxivCategories', () {
+    test('resolves configured featured category codes', () {
+      final featured = featuredArxivCategories();
+
+      expect(featured, isNotEmpty);
+      expect(
+        featured.every(
+          (category) => featuredArxivCategoryCodes.contains(category.code),
+        ),
+        isTrue,
+      );
+    });
+  });
+
+  group('categoryFromSearchInput', () {
+    test('resolves category filter labels shown in the search field', () {
+      final category = categoryFromSearchInput('cs.LG - Machine Learning');
+
+      expect(category, isNotNull);
+      expect(category!.code, 'cs.LG');
+    });
+
+    test('still resolves raw category queries', () {
+      expect(categoryFromSearchInput('cat:cs.AI')?.code, 'cs.AI');
+    });
+  });
+
+  group('effectiveSearchQuery', () {
+    test('converts a filter label to an arXiv category query', () {
+      expect(
+        effectiveSearchQuery('cs.LG - Machine Learning'),
+        'cat:cs.LG',
+      );
+    });
+
+    test('passes through free-text searches unchanged', () {
+      expect(effectiveSearchQuery('transformer'), 'transformer');
+    });
+  });
+
+  group('visibleFilterCategories', () {
+    test('puts the active category first even when it is not featured', () {
+      final visible = visibleFilterCategories('stat.TH - Statistics Theory');
+
+      expect(visible.first.code, 'stat.TH');
+      expect(visible.skip(1).map((category) => category.code), featuredArxivCategories().map((category) => category.code));
+    });
+
+    test('moves an active featured category to the front', () {
+      final visible = visibleFilterCategories('cs.LG - Machine Learning');
+
+      expect(visible.first.code, 'cs.LG');
+      expect(visible.where((category) => category.code == 'cs.LG').length, 1);
+    });
+  });
+
+  group('groupedArxivCategories', () {
+    test('groups categories by their subject area', () {
+      final grouped = groupedArxivCategories();
+
+      expect(grouped['Computer Science'], isNotEmpty);
+      expect(
+        grouped['Computer Science']!.any((category) => category.code == 'cs.AI'),
+        isTrue,
+      );
+    });
+  });
+
+  group('isCategorySelected', () {
+    test('matches both category query and filter label input', () {
+      const category = ArxivCategory(
+        code: 'cs.LG',
+        label: 'Machine Learning',
+        group: 'Computer Science',
+      );
+
+      expect(isCategorySelected(category, 'cat:cs.LG'), isTrue);
+      expect(isCategorySelected(category, 'cs.LG - Machine Learning'), isTrue);
+      expect(isCategorySelected(category, 'transformer'), isFalse);
+    });
+  });
+
   group('category labels', () {
     const category = ArxivCategory(
       code: 'cs.LG',
@@ -87,8 +169,8 @@ void main() {
       group: 'Computer Science',
     );
 
-    test('categoryChipLabel uses the short code', () {
-      expect(categoryChipLabel(category), 'cs.LG');
+    test('categoryChipLabel uses the human-readable label', () {
+      expect(categoryChipLabel(category), 'Machine Learning');
     });
 
     test('categoryFilterLabel combines code and human label', () {

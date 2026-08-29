@@ -13,6 +13,19 @@ class ArxivCategory {
   String get query => "cat:$code";
 }
 
+const featuredArxivCategoryCodes = [
+  "cs.AI",
+  "cs.LG",
+  "cs.CV",
+  "cs.CL",
+  "cs.RO",
+  "quant-ph",
+  "stat.ML",
+  "hep-th",
+  "q-bio.NC",
+  "eess.AS",
+];
+
 const arxivCategories = [
   ArxivCategory(
     code: "cs.AI",
