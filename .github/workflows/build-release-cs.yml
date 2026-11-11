@@ -5,6 +5,18 @@ on:
     types: [created]
 
 jobs:
+  check-version:
+    name: Check tag matches pubspec version
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare release tag with pubspec.yaml
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: ./scripts/check-version.sh "$RELEASE_TAG"
+
   # build-android:
   #   name: Build Flutter APK
   #   runs-on: ubuntu-latest
