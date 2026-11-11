@@ -1,7 +1,7 @@
 // ignore_for_file: file_names
 
+import 'package:arxiv/services/api_settings_store.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class APISettings extends StatefulWidget {
@@ -14,6 +14,7 @@ class APISettings extends StatefulWidget {
 }
 
 class _APISettingsState extends State<APISettings> {
+  final ApiSettingsStore _apiSettingsStore = ApiSettingsStore();
   TextEditingController apiKeyController = TextEditingController();
   var googleAIStudioURL = "https://aistudio.google.com/app/apikey";
   var apiKey = "";
@@ -25,25 +26,20 @@ class _APISettingsState extends State<APISettings> {
   void saveAPIKey() async {
     var newAPIKey = apiKeyController.text.trim();
     if (newAPIKey != "") {
-      Box apiBox = await Hive.openBox("apibox");
-      await apiBox.put("apikey", newAPIKey);
-      await Hive.close();
+      await _apiSettingsStore.saveApiKey(newAPIKey);
     }
     widget.configAPIKey();
   }
 
   void clearAPIKey() async {
     apiKey = "";
-    Box apiBox = await Hive.openBox("apibox");
-    await apiBox.put("apikey", "");
-    await Hive.close();
+    await _apiSettingsStore.clearApiKey();
     widget.configAPIKey();
   }
 
   void getSavedAPIKey() async {
-    Box apiBox = await Hive.openBox("apibox");
-    apiKey = await apiBox.get("apikey") ?? "";
-    await Hive.close();
+    apiKey = await _apiSettingsStore.loadApiKey();
+    if (!mounted) return;
     setState(() {});
   }
 
@@ -82,7 +78,9 @@ class _APISettingsState extends State<APISettings> {
               cursorColor: colorScheme.primary,
               style: TextStyle(color: colorScheme.onSurface),
               decoration: InputDecoration(
-                hintText: apiKey == "" ? 'enter API key here..' : apiKey,
+                hintText: apiKey == ""
+                    ? 'enter API key here..'
+                    : ApiSettingsStore.maskApiKey(apiKey),
                 hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                 border: InputBorder.none,
               ),
