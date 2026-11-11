@@ -7,6 +7,7 @@ import 'package:arxiv/components/prompt_suggestions.dart';
 import 'package:arxiv/models/chat_message.dart';
 import 'package:arxiv/models/chat_thread.dart';
 import 'package:arxiv/models/paper.dart';
+import 'package:arxiv/services/api_settings_store.dart';
 import 'package:arxiv/services/chat_history_store.dart';
 import 'package:arxiv/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,7 @@ class AIChatPage extends StatefulWidget {
 }
 
 class _AIChatPageState extends State<AIChatPage> {
+  final ApiSettingsStore _apiSettingsStore = ApiSettingsStore();
   final ChatHistoryStore _chatHistoryStore = ChatHistoryStore();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   TextEditingController userMessageController = TextEditingController();
@@ -314,9 +316,7 @@ class _AIChatPageState extends State<AIChatPage> {
 
     selectedModelName = modelName;
 
-    Box apiBox = await Hive.openBox("apibox");
-    await apiBox.put("geminiModel", modelName);
-    await Hive.close();
+    await _apiSettingsStore.saveGeminiModel(modelName);
 
     if (apiKey.isNotEmpty) {
       model = await Gemini.newModel(
@@ -333,10 +333,8 @@ class _AIChatPageState extends State<AIChatPage> {
   }
 
   void configModel() async {
-    Box apiBox = await Hive.openBox("apibox");
-    apiKey = await apiBox.get("apikey") ?? "";
-    final savedModelName = await apiBox.get("geminiModel");
-    await Hive.close();
+    apiKey = await _apiSettingsStore.loadApiKey();
+    final savedModelName = await _apiSettingsStore.loadGeminiModel();
 
     if (apiKey.isNotEmpty) {
       if (mounted) {
